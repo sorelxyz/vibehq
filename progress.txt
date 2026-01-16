@@ -81,3 +81,14 @@
 - Created NewTicketModal component for creating tickets from dashboard
 - Updated DashboardPage with URL sync (?ticket=xxx query param)
 - Deep linking support: opening URL with ticket param opens panel
+
+## Item 10: Image Upload and Attachments - COMPLETE
+- Created services/images.ts with upload, delete, and list functions
+- Created routes/images.ts with POST/GET/DELETE endpoints for image management
+- Created routes/static.ts to serve uploaded files via /uploads/*
+- Updated server index.ts with image routes and uploads directory initialization
+- Created useImages hook with TanStack Query for frontend image state management
+- Created ImageUpload component with drag-and-drop, file picker, thumbnail grid
+- Updated TicketDetailPanel to integrate ImageUpload component
+- Images stored in data/uploads/ with metadata in ticket_images table
+- File type validation (jpg, png, gif, webp) and size validation (max 10MB)

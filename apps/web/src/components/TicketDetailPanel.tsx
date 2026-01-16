@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import type { Ticket, TicketStatus, Project } from '@vibehq/shared';
 import { TICKET_STATUSES } from '@vibehq/shared';
 import { useUpdateTicket, useDeleteTicket } from '../hooks/useTickets';
+import { useImages, useUploadImage, useDeleteImage } from '../hooks/useImages';
 import ConfirmDialog from './ConfirmDialog';
+import ImageUpload from './ImageUpload';
 
 interface TicketDetailPanelProps {
   ticket: Ticket | null;
@@ -42,6 +44,22 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
 
   const updateTicket = useUpdateTicket();
   const deleteTicket = useDeleteTicket();
+
+  const { data: images = [] } = useImages(ticket?.id || '');
+  const uploadImage = useUploadImage();
+  const deleteImage = useDeleteImage();
+
+  const handleUpload = (file: File) => {
+    if (ticket) {
+      uploadImage.mutate({ ticketId: ticket.id, file });
+    }
+  };
+
+  const handleDeleteImage = (imageId: string) => {
+    if (ticket) {
+      deleteImage.mutate({ id: imageId, ticketId: ticket.id });
+    }
+  };
 
   useEffect(() => {
     if (ticket) {
@@ -239,10 +257,16 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
             )}
           </div>
 
-          {/* Attachments placeholder */}
+          {/* Attachments */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-neutral-400 mb-2">Attachments</label>
-            <p className="text-neutral-500 text-sm italic">Image attachments coming soon...</p>
+            <ImageUpload
+              ticketId={ticket.id}
+              images={images}
+              onUpload={handleUpload}
+              onDelete={handleDeleteImage}
+              isUploading={uploadImage.isPending}
+            />
           </div>
 
           {/* PRD placeholder */}
