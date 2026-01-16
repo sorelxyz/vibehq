@@ -31,3 +31,19 @@
 - Created routes/tickets.ts with all endpoints including /reorder and /:id/status
 - Validation for required fields and valid status values
 - Tickets created in 'backlog' status by default
+
+## Item 5: Frontend Shell and Routing - COMPLETE
+- (Already done in Item 1) React + Vite + TailwindCSS setup
+- BrowserRouter and Routes configured in App.tsx
+- QueryClient with TanStack Query provider
+- Layout component with sidebar navigation
+- Dark theme with neutral-950 background
+- API client utility in lib/api.ts
+
+## Item 6: Projects Management UI - COMPLETE
+- Created useProjects hook with TanStack Query (list, create, update, delete mutations)
+- Built ProjectsPage with responsive card grid (2-3 columns)
+- Created ProjectModal for create/edit with form validation
+- Created ConfirmDialog for delete confirmation (reusable)
+- Loading states with skeleton cards
+- Empty state with call-to-action
