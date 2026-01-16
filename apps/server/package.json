@@ -1,0 +1,22 @@
+{
+  "name": "@vibehq/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'No lint configured'"
+  },
+  "dependencies": {
+    "hono": "^4.4.0",
+    "drizzle-orm": "^0.30.0",
+    "nanoid": "^5.0.7",
+    "@vibehq/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "vibehq",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "bun run --parallel dev:web dev:server",
+    "dev:web": "bun run --filter @vibehq/web dev",
+    "dev:server": "bun run --filter @vibehq/server dev",
+    "typecheck": "bun run --filter '*' typecheck",
+    "lint": "bun run --filter '*' lint"
+  }
+}
