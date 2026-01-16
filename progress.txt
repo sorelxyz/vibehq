@@ -165,3 +165,18 @@
   - Fetches RALPH instance for in_progress tickets
   - Shows RalphLogViewer with real-time logs
   - Displays branch name badge
+
+## Item 16: Process Monitoring and Auto-Status Updates - COMPLETE
+- Created services/process-monitor.ts:
+  - startProcessMonitor: polls every 5 seconds for running instances
+  - stopProcessMonitor: stops the polling interval
+  - checkRunningInstances: checks if PIDs are still active
+  - determineCompletionStatus: reads logs for RALPH_COMPLETE or error patterns
+  - recoverOrphanedInstances: handles instances left running after server restart
+- Updated server index.ts:
+  - Calls recoverOrphanedInstances on startup
+  - Starts process monitor on startup
+  - Graceful shutdown handlers (SIGINT/SIGTERM) stop the monitor
+- Completed RALPH moves ticket to 'in_testing'
+- Failed RALPH moves ticket back to 'in_review'
+- Status changes broadcast via WebSocket to connected clients

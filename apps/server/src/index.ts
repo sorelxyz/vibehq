@@ -8,12 +8,29 @@ import ralphRoutes from './routes/ralph';
 import staticRoutes from './routes/static';
 import { ensureUploadsDir } from './services/images';
 import { websocketHandler } from './websocket';
+import { startProcessMonitor, stopProcessMonitor, recoverOrphanedInstances } from './services/process-monitor';
 
 // Run migrations on startup
 migrate();
 
 // Ensure uploads directory exists
 ensureUploadsDir();
+
+// Recover any orphaned RALPH instances from previous server run
+recoverOrphanedInstances().catch(console.error);
+
+// Start process monitor for running RALPH instances
+startProcessMonitor();
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  stopProcessMonitor();
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  stopProcessMonitor();
+  process.exit(0);
+});
 
 const app = new Hono();
 
