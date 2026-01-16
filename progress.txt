@@ -67,3 +67,17 @@
 - Reorder tickets within same column via batch reorder API
 - DragOverlay shows dragged ticket with visual feedback
 - Column highlights when dragging over (ring-2 ring-blue-500)
+
+## Item 9: Ticket Detail Panel - COMPLETE
+- Created TicketDetailPanel slide-out component (slides from right, 480px max-width)
+- Escape key and backdrop click close the panel
+- Inline editing for title (click to edit) and description (Edit button)
+- Status dropdown to change ticket status
+- Delete button with ConfirmDialog confirmation
+- Timestamps displayed in relative format ("2 hours ago")
+- Project badge showing project name
+- Placeholder sections for Attachments and PRD (to be implemented in later items)
+- Created TicketForm component for create/edit operations
+- Created NewTicketModal component for creating tickets from dashboard
+- Updated DashboardPage with URL sync (?ticket=xxx query param)
+- Deep linking support: opening URL with ticket param opens panel

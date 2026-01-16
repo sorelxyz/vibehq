@@ -1,19 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { Ticket } from '@vibehq/shared';
 import { useTickets } from '../hooks/useTickets';
 import { useProjects } from '../hooks/useProjects';
 import KanbanBoard from '../components/KanbanBoard';
+import TicketDetailPanel from '../components/TicketDetailPanel';
+import NewTicketModal from '../components/NewTicketModal';
 
 export default function DashboardPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [showNewTicketModal, setShowNewTicketModal] = useState(false);
 
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: tickets, isLoading: ticketsLoading } = useTickets(selectedProjectId);
 
+  // Sync URL with selected ticket
+  useEffect(() => {
+    const ticketId = searchParams.get('ticket');
+    if (ticketId) {
+      setSelectedTicketId(ticketId);
+    }
+  }, [searchParams]);
+
   const handleTicketClick = (ticket: Ticket) => {
-    setSelectedTicket(ticket);
+    setSelectedTicketId(ticket.id);
+    setSearchParams({ ticket: ticket.id });
   };
+
+  const handleClosePanel = () => {
+    setSelectedTicketId(null);
+    setSearchParams({});
+  };
+
+  const selectedTicket = useMemo(() => {
+    if (!selectedTicketId || !tickets) return null;
+    return tickets.find((t) => t.id === selectedTicketId) || null;
+  }, [selectedTicketId, tickets]);
+
+  const selectedProject = useMemo(() => {
+    if (!selectedTicket || !projects) return null;
+    return projects.find((p) => p.id === selectedTicket.projectId) || null;
+  }, [selectedTicket, projects]);
 
   const isLoading = projectsLoading || ticketsLoading;
 
@@ -34,7 +63,10 @@ export default function DashboardPage() {
               </option>
             ))}
           </select>
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-medium transition-colors">
+          <button
+            onClick={() => setShowNewTicketModal(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-medium transition-colors"
+          >
             New Ticket
           </button>
         </div>
@@ -62,21 +94,19 @@ export default function DashboardPage() {
         />
       )}
 
-      {selectedTicket && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-2">{selectedTicket.title}</h3>
-            <p className="text-neutral-400 mb-4">{selectedTicket.description}</p>
-            <p className="text-sm text-neutral-500 mb-4">Status: {selectedTicket.status}</p>
-            <button
-              onClick={() => setSelectedTicket(null)}
-              className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 rounded-md font-medium transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+      <TicketDetailPanel
+        ticket={selectedTicket}
+        project={selectedProject}
+        isOpen={!!selectedTicketId}
+        onClose={handleClosePanel}
+      />
+
+      <NewTicketModal
+        isOpen={showNewTicketModal}
+        onClose={() => setShowNewTicketModal(false)}
+        projects={projects || []}
+        defaultProjectId={selectedProjectId}
+      />
     </div>
   );
 }
