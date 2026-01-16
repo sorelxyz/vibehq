@@ -113,4 +113,24 @@ app.post('/:id/generate-prd', async (c) => {
   }
 });
 
+// POST /api/tickets/:id/approve - Approve PRD and move to in_progress
+app.post('/:id/approve', async (c) => {
+  const ticketId = c.req.param('id');
+  const ticket = await ticketsService.getTicket(ticketId);
+
+  if (!ticket) return c.json({ error: 'Ticket not found' }, 404);
+  if (ticket.status !== 'in_review') {
+    return c.json({ error: 'Ticket must be in review status' }, 400);
+  }
+  if (!ticket.prdContent) {
+    return c.json({ error: 'Ticket has no PRD content' }, 400);
+  }
+
+  const updatedTicket = await ticketsService.updateTicket(ticketId, {
+    status: 'in_progress',
+  });
+
+  return c.json(updatedTicket);
+});
+
 export default app;

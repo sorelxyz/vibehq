@@ -111,3 +111,15 @@
 - isGitRepo: validates if path is a git repository
 - getMainBranch: detects main/master branch name
 - WorktreeInfo type already existed in shared package
+
+## Item 12: PRD Review and Approval UI - COMPLETE
+- Created PRDViewer.tsx with basic markdown rendering (headers, code blocks, checkboxes, lists)
+- Created PRDEditor.tsx with textarea for editing PRD markdown content
+- Added useApprovePRD hook to useTickets.ts for approving PRDs
+- Added POST /api/tickets/:id/approve endpoint to backend routes
+- Updated TicketDetailPanel.tsx with conditional PRD rendering:
+  - Backlog: informative message to move to Up Next
+  - Up Next: "Generate PRD" button with loading state
+  - In Review: PRD viewer/editor + "Approve & Launch RALPH" button
+  - In Progress/Testing/Completed: Read-only PRD viewer
+- Loading states and error handling for all PRD operations

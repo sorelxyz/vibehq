@@ -76,3 +76,20 @@ export function useGeneratePRD() {
     },
   });
 }
+
+export function useApprovePRD() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ticketId: string) => {
+      const res = await fetch(`/api/tickets/${ticketId}/approve`, { method: 'POST' });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to approve PRD');
+      }
+      return res.json() as Promise<Ticket>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
+  });
+}

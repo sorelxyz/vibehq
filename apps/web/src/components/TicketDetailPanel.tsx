@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { Ticket, TicketStatus, Project } from '@vibehq/shared';
 import { TICKET_STATUSES } from '@vibehq/shared';
-import { useUpdateTicket, useDeleteTicket } from '../hooks/useTickets';
+import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD } from '../hooks/useTickets';
 import { useImages, useUploadImage, useDeleteImage } from '../hooks/useImages';
 import ConfirmDialog from './ConfirmDialog';
 import ImageUpload from './ImageUpload';
+import PRDViewer from './PRDViewer';
+import PRDEditor from './PRDEditor';
 
 interface TicketDetailPanelProps {
   ticket: Ticket | null;
@@ -38,12 +40,15 @@ function formatRelativeTime(date: Date): string {
 export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: TicketDetailPanelProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingPRD, setIsEditingPRD] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const updateTicket = useUpdateTicket();
   const deleteTicket = useDeleteTicket();
+  const generatePRD = useGeneratePRD();
+  const approvePRD = useApprovePRD();
 
   const { data: images = [] } = useImages(ticket?.id || '');
   const uploadImage = useUploadImage();
@@ -68,6 +73,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
     }
     setIsEditingTitle(false);
     setIsEditingDescription(false);
+    setIsEditingPRD(false);
   }, [ticket]);
 
   useEffect(() => {
@@ -99,6 +105,19 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
     await deleteTicket.mutateAsync(ticket.id);
     setShowDeleteConfirm(false);
     onClose();
+  };
+
+  const handleGeneratePRD = async () => {
+    await generatePRD.mutateAsync(ticket.id);
+  };
+
+  const handleSavePRD = async (content: string) => {
+    await updateTicket.mutateAsync({ id: ticket.id, data: { prdContent: content } });
+    setIsEditingPRD(false);
+  };
+
+  const handleApproveAndLaunch = async () => {
+    await approvePRD.mutateAsync(ticket.id);
   };
 
   return (
@@ -269,15 +288,107 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
             />
           </div>
 
-          {/* PRD placeholder */}
+          {/* PRD Section */}
           <div>
             <label className="block text-sm font-medium text-neutral-400 mb-2">PRD</label>
-            {ticket.prdContent ? (
-              <div className="p-3 bg-neutral-800 rounded-lg text-neutral-300 text-sm whitespace-pre-wrap max-h-64 overflow-y-auto">
-                {ticket.prdContent}
+
+            {/* Backlog status - no PRD actions */}
+            {ticket.status === 'backlog' && (
+              <p className="text-neutral-500 text-sm italic">
+                Move ticket to "Up Next" to generate a PRD.
+              </p>
+            )}
+
+            {/* Up Next status - Generate PRD button */}
+            {ticket.status === 'up_next' && (
+              <div>
+                {ticket.prdContent ? (
+                  <div className="p-3 bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">
+                    <PRDViewer content={ticket.prdContent} />
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleGeneratePRD}
+                    disabled={generatePRD.isPending}
+                    className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed rounded-lg transition-colors font-medium"
+                  >
+                    {generatePRD.isPending ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Generating PRD...
+                      </span>
+                    ) : (
+                      'Generate PRD'
+                    )}
+                  </button>
+                )}
+                {generatePRD.isError && (
+                  <p className="mt-2 text-red-400 text-sm">
+                    {generatePRD.error?.message || 'Failed to generate PRD'}
+                  </p>
+                )}
               </div>
-            ) : (
-              <p className="text-neutral-500 text-sm italic">No PRD generated yet.</p>
+            )}
+
+            {/* In Review status - View/Edit PRD + Approve button */}
+            {ticket.status === 'in_review' && ticket.prdContent && (
+              <div>
+                {isEditingPRD ? (
+                  <PRDEditor
+                    content={ticket.prdContent}
+                    onSave={handleSavePRD}
+                    onCancel={() => setIsEditingPRD(false)}
+                    isSaving={updateTicket.isPending}
+                  />
+                ) : (
+                  <>
+                    <div className="p-3 bg-neutral-800 rounded-lg max-h-64 overflow-y-auto mb-3">
+                      <PRDViewer
+                        content={ticket.prdContent}
+                        onEdit={() => setIsEditingPRD(true)}
+                      />
+                    </div>
+                    <button
+                      onClick={handleApproveAndLaunch}
+                      disabled={approvePRD.isPending}
+                      className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg transition-colors font-medium"
+                    >
+                      {approvePRD.isPending ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Approving...
+                        </span>
+                      ) : (
+                        'Approve & Launch RALPH'
+                      )}
+                    </button>
+                    {approvePRD.isError && (
+                      <p className="mt-2 text-red-400 text-sm">
+                        {approvePRD.error?.message || 'Failed to approve PRD'}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* In Progress, In Testing, Completed - Read-only PRD */}
+            {['in_progress', 'in_testing', 'completed'].includes(ticket.status) && (
+              <div>
+                {ticket.prdContent ? (
+                  <div className="p-3 bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">
+                    <PRDViewer content={ticket.prdContent} />
+                  </div>
+                ) : (
+                  <p className="text-neutral-500 text-sm italic">No PRD generated.</p>
+                )}
+              </div>
             )}
           </div>
         </div>
