@@ -1,5 +1,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { migrate } from './db/migrate';
+
+// Run migrations on startup
+migrate();
 
 const app = new Hono();
 

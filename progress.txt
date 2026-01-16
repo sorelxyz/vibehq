@@ -9,3 +9,10 @@
 - Created Layout with sidebar navigation
 - Created placeholder Dashboard and Projects pages
 - Created API client utility
+
+## Item 2: Database Schema with Drizzle ORM - COMPLETE
+- Created db/schema.ts with all tables (projects, tickets, ticket_images, ralph_instances)
+- Created db/index.ts for database connection with WAL mode and foreign keys enabled
+- Created db/migrate.ts with CREATE TABLE IF NOT EXISTS statements
+- Server runs migrations on startup
+- Database file created at data/vibehq.db
