@@ -16,3 +16,10 @@
 - Created db/migrate.ts with CREATE TABLE IF NOT EXISTS statements
 - Server runs migrations on startup
 - Database file created at data/vibehq.db
+
+## Item 3: Backend API - Projects CRUD - COMPLETE
+- Created services/projects.ts with CRUD operations (list, get, create, update, delete)
+- Created routes/projects.ts with Hono endpoints
+- Wired up routes in server index.ts
+- CORS configured for localhost:5173
+- Validation returns 400 for missing required fields
