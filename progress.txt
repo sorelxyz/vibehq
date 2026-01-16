@@ -92,3 +92,13 @@
 - Updated TicketDetailPanel to integrate ImageUpload component
 - Images stored in data/uploads/ with metadata in ticket_images table
 - File type validation (jpg, png, gif, webp) and size validation (max 10MB)
+
+## Item 11: PRD Generation with Claude Code - COMPLETE
+- Created utils/shell.ts with exec() function for spawning shell commands with timeout
+- Created services/prd-generator.ts with generatePRD() and isClaudeCodeAvailable()
+- PRD prompt template includes project info, ticket details, and attached image paths
+- Added POST /api/tickets/:id/generate-prd endpoint to routes/tickets.ts
+- Endpoint validates ticket exists, project exists, and Claude Code is installed
+- PRD content saved to ticket.prdContent and status changes to 'in_review'
+- Added useGeneratePRD hook to frontend with TanStack Query mutation
+- 2 minute timeout for Claude Code execution

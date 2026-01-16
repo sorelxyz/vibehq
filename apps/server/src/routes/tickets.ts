@@ -1,5 +1,8 @@
 import { Hono } from 'hono';
 import * as ticketsService from '../services/tickets';
+import * as projectsService from '../services/projects';
+import * as imagesService from '../services/images';
+import * as prdGenerator from '../services/prd-generator';
 import { TICKET_STATUSES } from '@vibehq/shared';
 
 const app = new Hono();
@@ -74,6 +77,40 @@ app.post('/reorder', async (c) => {
   }
   await ticketsService.reorderTickets(body.updates);
   return c.json({ success: true });
+});
+
+// POST /api/tickets/:id/generate-prd - Generate PRD for ticket
+app.post('/:id/generate-prd', async (c) => {
+  const ticketId = c.req.param('id');
+
+  const ticket = await ticketsService.getTicket(ticketId);
+  if (!ticket) return c.json({ error: 'Ticket not found' }, 404);
+
+  const project = await projectsService.getProject(ticket.projectId);
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+
+  // Check if Claude Code is available
+  const isAvailable = await prdGenerator.isClaudeCodeAvailable();
+  if (!isAvailable) {
+    return c.json({ error: 'Claude Code CLI not found. Please install it.' }, 500);
+  }
+
+  const images = await imagesService.getImagesForTicket(ticketId);
+
+  try {
+    const prdContent = await prdGenerator.generatePRD(ticket, project, images);
+
+    const updatedTicket = await ticketsService.updateTicket(ticketId, {
+      prdContent,
+      status: 'in_review',
+    });
+
+    return c.json(updatedTicket);
+  } catch (error) {
+    console.error('PRD generation failed:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json({ error: `PRD generation failed: ${message}` }, 500);
+  }
 });
 
 export default app;

@@ -59,3 +59,20 @@ export function useReorderTickets() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'] }),
   });
 }
+
+export function useGeneratePRD() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ticketId: string) => {
+      const res = await fetch(`/api/tickets/${ticketId}/generate-prd`, { method: 'POST' });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to generate PRD');
+      }
+      return res.json() as Promise<Ticket>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
+  });
+}
