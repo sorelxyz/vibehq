@@ -102,3 +102,12 @@
 - PRD content saved to ticket.prdContent and status changes to 'in_review'
 - Added useGeneratePRD hook to frontend with TanStack Query mutation
 - 2 minute timeout for Claude Code execution
+
+## Item 13: Git Worktree Management - COMPLETE
+- Created services/worktree.ts with git worktree operations
+- createWorktree: creates worktree with new branch (ralph/{ticketId}-{slug})
+- deleteWorktree: removes worktree and optionally deletes branch
+- listWorktrees: lists all RALPH worktrees for a project
+- isGitRepo: validates if path is a git repository
+- getMainBranch: detects main/master branch name
+- WorktreeInfo type already existed in shared package
