@@ -23,3 +23,11 @@
 - Wired up routes in server index.ts
 - CORS configured for localhost:5173
 - Validation returns 400 for missing required fields
+
+## Item 4: Backend API - Tickets CRUD - COMPLETE
+- Created services/tickets.ts with CRUD operations (list, get, create, update, delete)
+- Added updateTicketStatus and reorderTickets for drag-and-drop support
+- Added getNextPosition to calculate position for new tickets
+- Created routes/tickets.ts with all endpoints including /reorder and /:id/status
+- Validation for required fields and valid status values
+- Tickets created in 'backlog' status by default
