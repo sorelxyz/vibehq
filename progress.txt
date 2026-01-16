@@ -47,3 +47,13 @@
 - Created ConfirmDialog for delete confirmation (reusable)
 - Loading states with skeleton cards
 - Empty state with call-to-action
+
+## Item 7: Kanban Board Layout - COMPLETE
+- Created useTickets hook with TanStack Query (list by projectId, CRUD mutations)
+- Created KanbanBoard component with 6 columns for ticket statuses
+- Created KanbanColumn component with status header, count badge, and scrollable ticket list
+- Created TicketCard component with status-colored left border, title, description
+- Updated DashboardPage with project filter dropdown and kanban board
+- Loading skeleton for columns while fetching
+- Empty state for columns with no tickets
+- Basic ticket detail modal on click (placeholder for Item 9)
