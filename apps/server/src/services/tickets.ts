@@ -44,6 +44,7 @@ export async function updateTicket(id: string, data: UpdateTicketInput): Promise
   if (data.description !== undefined) updateData.description = data.description;
   if (data.status !== undefined) updateData.status = data.status;
   if (data.prdContent !== undefined) updateData.prdContent = data.prdContent;
+  if (data.branchName !== undefined) updateData.branchName = data.branchName;
   if (data.position !== undefined) updateData.position = data.position;
 
   const [row] = await db.update(tickets)

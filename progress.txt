@@ -123,3 +123,22 @@
   - In Review: PRD viewer/editor + "Approve & Launch RALPH" button
   - In Progress/Testing/Completed: Read-only PRD viewer
 - Loading states and error handling for all PRD operations
+
+## Item 14: RALPH Instance Management - COMPLETE
+- Created services/ralph.ts with RALPH instance management:
+  - createRalphInstance: creates worktree, PRD file, progress file, RALPH script
+  - startRalphInstance: spawns process, tracks PID, updates status to 'running'
+  - stopRalphInstance: kills process, updates status to 'failed'
+  - getRalphInstance, getRalphInstanceForTicket, getRunningInstances
+  - isProcessRunning: checks if PID is still active
+  - In-memory process tracking with Map
+- Created routes/ralph.ts with API endpoints:
+  - GET /api/ralph/:id - get instance status
+  - GET /api/ralph/:id/logs - get log contents
+  - POST /api/ralph/:id/stop - stop running instance
+  - GET /api/tickets/:ticketId/ralph - get instance for ticket
+  - POST /api/tickets/:ticketId/launch-ralph - create and start instance
+- Updated tickets approve endpoint to create and launch RALPH on approval
+- Added branchName to UpdateTicketInput type in shared package
+- Updated tickets service to support branchName in updateTicket
+- Wired up ralph routes in server index.ts

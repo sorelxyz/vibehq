@@ -3,6 +3,7 @@ import * as ticketsService from '../services/tickets';
 import * as projectsService from '../services/projects';
 import * as imagesService from '../services/images';
 import * as prdGenerator from '../services/prd-generator';
+import * as ralphService from '../services/ralph';
 import { TICKET_STATUSES } from '@vibehq/shared';
 
 const app = new Hono();
@@ -113,7 +114,7 @@ app.post('/:id/generate-prd', async (c) => {
   }
 });
 
-// POST /api/tickets/:id/approve - Approve PRD and move to in_progress
+// POST /api/tickets/:id/approve - Approve PRD and launch RALPH
 app.post('/:id/approve', async (c) => {
   const ticketId = c.req.param('id');
   const ticket = await ticketsService.getTicket(ticketId);
@@ -126,11 +127,26 @@ app.post('/:id/approve', async (c) => {
     return c.json({ error: 'Ticket has no PRD content' }, 400);
   }
 
-  const updatedTicket = await ticketsService.updateTicket(ticketId, {
-    status: 'in_progress',
-  });
+  const project = await projectsService.getProject(ticket.projectId);
+  if (!project) return c.json({ error: 'Project not found' }, 404);
 
-  return c.json(updatedTicket);
+  try {
+    // Create and start RALPH instance
+    const { instance, branchName } = await ralphService.createRalphInstance(ticket, project);
+    await ralphService.startRalphInstance(instance.id);
+
+    // Update ticket status and branch name
+    const updatedTicket = await ticketsService.updateTicket(ticketId, {
+      status: 'in_progress',
+      branchName,
+    });
+
+    return c.json({ ticket: updatedTicket, instance });
+  } catch (error) {
+    console.error('Failed to launch RALPH:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json({ error: `Failed to launch RALPH: ${message}` }, 500);
+  }
 });
 
 export default app;

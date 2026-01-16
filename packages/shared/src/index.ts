@@ -79,6 +79,7 @@ export interface UpdateTicketInput {
   description?: string;
   status?: TicketStatus;
   prdContent?: string;
+  branchName?: string;
   position?: number;
 }
 

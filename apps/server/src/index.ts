@@ -4,6 +4,7 @@ import { migrate } from './db/migrate';
 import projectsRoutes from './routes/projects';
 import ticketsRoutes from './routes/tickets';
 import imagesRoutes from './routes/images';
+import ralphRoutes from './routes/ralph';
 import staticRoutes from './routes/static';
 import { ensureUploadsDir } from './services/images';
 
@@ -21,7 +22,9 @@ app.use('/api/*', cors({ origin: 'http://localhost:5173' }));
 // Routes
 app.route('/api/projects', projectsRoutes);
 app.route('/api/tickets', ticketsRoutes);
+app.route('/api/ralph', ralphRoutes);
 app.route('/api', imagesRoutes);
+app.route('/api', ralphRoutes); // Also mount for /api/tickets/:id/ralph and /api/tickets/:id/launch-ralph
 app.route('/', staticRoutes);
 
 // Health check
