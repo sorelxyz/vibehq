@@ -57,3 +57,13 @@
 - Loading skeleton for columns while fetching
 - Empty state for columns with no tickets
 - Basic ticket detail modal on click (placeholder for Item 9)
+
+## Item 8: Drag and Drop Implementation - COMPLETE
+- Added useUpdateTicketStatus and useReorderTickets mutations to useTickets hook
+- Created SortableTicketCard component using @dnd-kit/sortable
+- Updated KanbanColumn with useDroppable and SortableContext
+- Updated KanbanBoard with DndContext, sensors (Pointer, Keyboard), and drag handlers
+- Drag ticket between columns updates status and position via API
+- Reorder tickets within same column via batch reorder API
+- DragOverlay shows dragged ticket with visual feedback
+- Column highlights when dragging over (ring-2 ring-blue-500)

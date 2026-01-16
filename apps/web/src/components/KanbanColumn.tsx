@@ -1,5 +1,7 @@
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Ticket, TicketStatus } from '@vibehq/shared';
-import TicketCard from './TicketCard';
+import SortableTicketCard from './SortableTicketCard';
 
 interface KanbanColumnProps {
   status: TicketStatus;
@@ -26,8 +28,14 @@ const STATUS_COLORS: Record<TicketStatus, string> = {
 };
 
 export default function KanbanColumn({ status, tickets, onTicketClick }: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+
   return (
-    <div className="flex flex-col w-[280px] min-w-[280px] bg-neutral-900 rounded-lg">
+    <div
+      className={`flex flex-col w-[280px] min-w-[280px] bg-neutral-900 rounded-lg transition-colors ${
+        isOver ? 'ring-2 ring-blue-500 bg-neutral-850' : ''
+      }`}
+    >
       <div className="flex items-center gap-2 p-3 border-b border-neutral-800">
         <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[status]}`} />
         <h3 className="font-semibold text-neutral-100">{STATUS_LABELS[status]}</h3>
@@ -35,18 +43,20 @@ export default function KanbanColumn({ status, tickets, onTicketClick }: KanbanC
           {tickets.length}
         </span>
       </div>
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        {tickets.length === 0 ? (
-          <p className="text-center text-sm text-neutral-600 py-4">No tickets</p>
-        ) : (
-          tickets.map((ticket) => (
-            <TicketCard
-              key={ticket.id}
-              ticket={ticket}
-              onClick={() => onTicketClick(ticket)}
-            />
-          ))
-        )}
+      <div ref={setNodeRef} className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
+        <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
+          {tickets.length === 0 ? (
+            <p className="text-center text-sm text-neutral-600 py-4">No tickets</p>
+          ) : (
+            tickets.map((ticket) => (
+              <SortableTicketCard
+                key={ticket.id}
+                ticket={ticket}
+                onClick={() => onTicketClick(ticket)}
+              />
+            ))
+          )}
+        </SortableContext>
       </div>
     </div>
   );
