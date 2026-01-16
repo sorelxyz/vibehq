@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import type { Ticket, TicketStatus, Project } from '@vibehq/shared';
 import { TICKET_STATUSES } from '@vibehq/shared';
-import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD } from '../hooks/useTickets';
+import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD, useRalphInstance } from '../hooks/useTickets';
 import { useImages, useUploadImage, useDeleteImage } from '../hooks/useImages';
+import { useRalphLogs } from '../hooks/useRalphLogs';
 import ConfirmDialog from './ConfirmDialog';
 import ImageUpload from './ImageUpload';
 import PRDViewer from './PRDViewer';
 import PRDEditor from './PRDEditor';
+import RalphLogViewer from './RalphLogViewer';
 
 interface TicketDetailPanelProps {
   ticket: Ticket | null;
@@ -53,6 +55,16 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
   const { data: images = [] } = useImages(ticket?.id || '');
   const uploadImage = useUploadImage();
   const deleteImage = useDeleteImage();
+
+  // Fetch RALPH instance only when ticket is in_progress
+  const { data: ralphInstance } = useRalphInstance(
+    ticket?.status === 'in_progress' ? ticket?.id : undefined
+  );
+
+  // WebSocket logs for running instances
+  const { logs, status: ralphStatus, isConnected, error: logsError } = useRalphLogs(
+    ralphInstance?.id ?? null
+  );
 
   const handleUpload = (file: File) => {
     if (ticket) {
@@ -378,8 +390,44 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
               </div>
             )}
 
-            {/* In Progress, In Testing, Completed - Read-only PRD */}
-            {['in_progress', 'in_testing', 'completed'].includes(ticket.status) && (
+            {/* In Progress - Log viewer + Read-only PRD */}
+            {ticket.status === 'in_progress' && (
+              <div className="space-y-4">
+                {/* RALPH Progress Logs */}
+                {ralphInstance && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-neutral-400">RALPH Progress</span>
+                      {ticket.branchName && (
+                        <code className="text-xs bg-neutral-800 px-2 py-1 rounded text-neutral-300">
+                          {ticket.branchName}
+                        </code>
+                      )}
+                    </div>
+                    <div className="h-64 border border-neutral-700 rounded-lg overflow-hidden">
+                      <RalphLogViewer
+                        logs={logs}
+                        status={ralphStatus}
+                        isConnected={isConnected}
+                        error={logsError}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* PRD Content */}
+                {ticket.prdContent ? (
+                  <div className="p-3 bg-neutral-800 rounded-lg max-h-48 overflow-y-auto">
+                    <PRDViewer content={ticket.prdContent} />
+                  </div>
+                ) : (
+                  <p className="text-neutral-500 text-sm italic">No PRD generated.</p>
+                )}
+              </div>
+            )}
+
+            {/* In Testing, Completed - Read-only PRD */}
+            {['in_testing', 'completed'].includes(ticket.status) && (
               <div>
                 {ticket.prdContent ? (
                   <div className="p-3 bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">

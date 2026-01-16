@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { Ticket, CreateTicketInput, UpdateTicketInput, TicketStatus } from '@vibehq/shared';
+import type { Ticket, CreateTicketInput, UpdateTicketInput, TicketStatus, RalphInstance } from '@vibehq/shared';
 
 export function useTickets(projectId?: string) {
   return useQuery({
@@ -91,5 +91,14 @@ export function useApprovePRD() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
     },
+  });
+}
+
+export function useRalphInstance(ticketId: string | undefined) {
+  return useQuery({
+    queryKey: ['ralph-instance', ticketId],
+    queryFn: () => api.get<RalphInstance>(`/tickets/${ticketId}/ralph`),
+    enabled: !!ticketId,
+    retry: false, // Don't retry on 404
   });
 }

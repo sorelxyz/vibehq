@@ -142,3 +142,26 @@
 - Added branchName to UpdateTicketInput type in shared package
 - Updated tickets service to support branchName in updateTicket
 - Wired up ralph routes in server index.ts
+
+## Item 15: WebSocket Log Tailing - COMPLETE
+- Created websocket.ts with WebSocket handler for Bun:
+  - Tracks subscriptions per instanceId
+  - File watcher for real-time log updates
+  - Broadcasts new log content to subscribers
+  - broadcastStatus function for status change notifications
+- Updated server index.ts to include websocket handler
+- Created useRalphLogs.ts hook:
+  - WebSocket connection with auto-reconnect (exponential backoff)
+  - Handles subscribe/unsubscribe messages
+  - Tracks logs, status, connection state, and errors
+- Created RalphLogViewer.tsx component:
+  - Status bar with connection indicator
+  - Auto-scroll to bottom on new logs
+  - Error message display
+  - Monospace font for log output
+- Updated vite.config.ts with WebSocket proxy (/ws)
+- Added useRalphInstance hook to useTickets.ts
+- Updated TicketDetailPanel.tsx:
+  - Fetches RALPH instance for in_progress tickets
+  - Shows RalphLogViewer with real-time logs
+  - Displays branch name badge

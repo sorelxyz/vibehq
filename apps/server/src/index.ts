@@ -7,6 +7,7 @@ import imagesRoutes from './routes/images';
 import ralphRoutes from './routes/ralph';
 import staticRoutes from './routes/static';
 import { ensureUploadsDir } from './services/images';
+import { websocketHandler } from './websocket';
 
 // Run migrations on startup
 migrate();
@@ -33,6 +34,7 @@ app.get('/health', (c) => c.json({ status: 'ok' }));
 export default {
   port: 3001,
   fetch: app.fetch,
+  websocket: websocketHandler,
 };
 
 console.log('Server running on http://localhost:3001');
