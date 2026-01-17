@@ -1,7 +1,25 @@
 import { Hono } from 'hono';
+import { stat } from 'fs/promises';
 import * as projectsService from '../services/projects';
+import { isGitRepo } from '../services/worktree';
 
 const app = new Hono();
+
+async function validateProjectPath(path: string): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const stats = await stat(path);
+    if (!stats.isDirectory()) {
+      return { valid: false, error: 'Path is not a directory' };
+    }
+    const isRepo = await isGitRepo(path);
+    if (!isRepo) {
+      return { valid: false, error: 'Path is not a git repository' };
+    }
+    return { valid: true };
+  } catch {
+    return { valid: false, error: 'Path does not exist' };
+  }
+}
 
 // GET /api/projects - List all projects
 app.get('/', async (c) => {
@@ -22,6 +40,10 @@ app.post('/', async (c) => {
   if (!body.name || !body.path) {
     return c.json({ error: 'name and path are required' }, 400);
   }
+  const validation = await validateProjectPath(body.path);
+  if (!validation.valid) {
+    return c.json({ error: validation.error }, 400);
+  }
   const project = await projectsService.createProject(body);
   return c.json(project, 201);
 });
@@ -29,6 +51,12 @@ app.post('/', async (c) => {
 // PATCH /api/projects/:id - Update project
 app.patch('/:id', async (c) => {
   const body = await c.req.json();
+  if (body.path) {
+    const validation = await validateProjectPath(body.path);
+    if (!validation.valid) {
+      return c.json({ error: validation.error }, 400);
+    }
+  }
   try {
     const project = await projectsService.updateProject(c.req.param('id'), body);
     return c.json(project);

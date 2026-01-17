@@ -196,3 +196,16 @@
   - "Mark as Complete" button moves ticket to completed
   - "Cleanup Worktree" button removes worktree but preserves branch
   - Instructions for user to review, merge, then complete
+
+## Item 18: Error Handling and Edge Cases - COMPLETE
+- Created middleware/error-handler.ts for consistent API error responses
+- Created utils/errors.ts with NotFoundError, ValidationError, ConflictError classes
+- Created Toast.tsx component for frontend error notifications
+- Created ErrorBoundary.tsx component for React error catching
+- Updated main.tsx with ErrorBoundary and ToastProvider wrappers
+- Updated server index.ts with error handler middleware
+- Added project path validation in routes/projects.ts:
+  - Validates path exists and is a directory
+  - Validates path is a git repository
+  - Returns 400 with descriptive error if validation fails
+- WebSocket reconnection already implemented in useRalphLogs with exponential backoff

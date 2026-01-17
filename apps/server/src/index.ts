@@ -9,6 +9,7 @@ import staticRoutes from './routes/static';
 import { ensureUploadsDir } from './services/images';
 import { websocketHandler } from './websocket';
 import { startProcessMonitor, stopProcessMonitor, recoverOrphanedInstances } from './services/process-monitor';
+import { errorHandler } from './middleware/error-handler';
 
 // Run migrations on startup
 migrate();
@@ -35,6 +36,7 @@ process.on('SIGTERM', () => {
 const app = new Hono();
 
 // Middleware
+app.use('*', errorHandler);
 app.use('/api/*', cors({ origin: 'http://localhost:5173' }));
 
 // Routes
