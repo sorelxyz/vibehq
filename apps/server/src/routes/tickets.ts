@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import * as ticketsService from '../services/tickets';
 import * as projectsService from '../services/projects';
 import * as imagesService from '../services/images';
-import * as prdGenerator from '../services/prd-generator';
+import * as prdGeneration from '../services/prd-generation';
 import * as ralphService from '../services/ralph';
 import { TICKET_STATUSES } from '@vibehq/shared';
 
@@ -80,7 +80,7 @@ app.post('/reorder', async (c) => {
   return c.json({ success: true });
 });
 
-// POST /api/tickets/:id/generate-prd - Generate PRD for ticket
+// POST /api/tickets/:id/generate-prd - Start PRD generation (async)
 app.post('/:id/generate-prd', async (c) => {
   const ticketId = c.req.param('id');
 
@@ -91,7 +91,7 @@ app.post('/:id/generate-prd', async (c) => {
   if (!project) return c.json({ error: 'Project not found' }, 404);
 
   // Check if Claude Code is available
-  const isAvailable = await prdGenerator.isClaudeCodeAvailable();
+  const isAvailable = await prdGeneration.isClaudeCodeAvailable();
   if (!isAvailable) {
     return c.json({ error: 'Claude Code CLI not found. Please install it.' }, 500);
   }
@@ -99,19 +99,32 @@ app.post('/:id/generate-prd', async (c) => {
   const images = await imagesService.getImagesForTicket(ticketId);
 
   try {
-    const prdContent = await prdGenerator.generatePRD(ticket, project, images);
-
-    const updatedTicket = await ticketsService.updateTicket(ticketId, {
-      prdContent,
-      status: 'in_review',
-    });
-
-    return c.json(updatedTicket);
+    // Start generation in background, return immediately
+    const generation = await prdGeneration.startPrdGeneration(ticket, project, images);
+    return c.json({ generationId: generation.id, status: generation.status });
   } catch (error) {
-    console.error('PRD generation failed:', error);
+    console.error('PRD generation failed to start:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: `PRD generation failed: ${message}` }, 500);
   }
+});
+
+// GET /api/tickets/:id/prd-generation - Get PRD generation status
+app.get('/:id/prd-generation', async (c) => {
+  const ticketId = c.req.param('id');
+  const generation = prdGeneration.getPrdGenerationForTicket(ticketId);
+
+  if (!generation) {
+    return c.json({ status: 'none' });
+  }
+
+  return c.json({
+    generationId: generation.id,
+    status: generation.status,
+    startedAt: generation.startedAt,
+    completedAt: generation.completedAt,
+    error: generation.error,
+  });
 });
 
 // POST /api/tickets/:id/approve - Approve PRD and launch RALPH

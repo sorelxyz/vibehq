@@ -60,13 +60,16 @@ export function useReorderTickets() {
   });
 }
 
+interface PrdGenerationResponse {
+  generationId: string;
+  status: 'running' | 'completed' | 'failed';
+}
+
 export function useGeneratePRD() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (ticketId: string) => {
       const res = await fetch(`/api/tickets/${ticketId}/generate-prd`, { method: 'POST' });
       if (!res.ok) {
-        // Handle empty response body gracefully
         const text = await res.text();
         if (text) {
           try {
@@ -78,10 +81,37 @@ export function useGeneratePRD() {
         }
         throw new Error(`Failed to generate PRD (${res.status})`);
       }
-      return res.json() as Promise<Ticket>;
+      return res.json() as Promise<PrdGenerationResponse>;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tickets'], refetchType: 'active' });
+  });
+}
+
+interface PrdGenerationStatus {
+  generationId?: string;
+  status: 'none' | 'running' | 'completed' | 'failed';
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
+}
+
+export function usePrdGenerationStatus(ticketId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: ['prd-generation', ticketId],
+    queryFn: async () => {
+      const result = await api.get<PrdGenerationStatus>(`/tickets/${ticketId}/prd-generation`);
+      // When completed, invalidate tickets to get the updated PRD content
+      if (result.status === 'completed') {
+        queryClient.invalidateQueries({ queryKey: ['tickets'], refetchType: 'active' });
+      }
+      return result;
+    },
+    enabled: !!ticketId,
+    refetchInterval: (query) => {
+      // Poll every 2 seconds while running, stop when done
+      const status = query.state.data?.status;
+      return status === 'running' ? 2000 : false;
     },
   });
 }

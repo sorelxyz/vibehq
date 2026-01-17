@@ -43,11 +43,29 @@ async function subscribeToLogs(ws: ServerWebSocket<WebSocketData>, instanceId: s
   // Unsubscribe from previous
   unsubscribeFromLogs(ws);
 
-  // Get instance to find log path
-  const { getRalphInstance } = await import('./services/ralph');
-  const instance = await getRalphInstance(instanceId);
+  let logPath: string | null = null;
+  let status: string | null = null;
 
-  if (!instance || !instance.logPath) {
+  // Check if this is a PRD generation or RALPH instance
+  if (instanceId.startsWith('prd-')) {
+    // PRD generation
+    const { getPrdGeneration } = await import('./services/prd-generation');
+    const generation = getPrdGeneration(instanceId);
+    if (generation) {
+      logPath = generation.logPath;
+      status = generation.status;
+    }
+  } else {
+    // RALPH instance
+    const { getRalphInstance } = await import('./services/ralph');
+    const instance = await getRalphInstance(instanceId);
+    if (instance) {
+      logPath = instance.logPath;
+      status = instance.status;
+    }
+  }
+
+  if (!logPath) {
     ws.send(JSON.stringify({ type: 'error', message: 'Instance or log not found' }));
     return;
   }
@@ -61,7 +79,7 @@ async function subscribeToLogs(ws: ServerWebSocket<WebSocketData>, instanceId: s
 
   // Send current log content
   try {
-    const content = await readFile(instance.logPath, 'utf-8');
+    const content = await readFile(logPath, 'utf-8');
     ws.send(JSON.stringify({ type: 'log', instanceId, data: content, initial: true }));
   } catch {
     ws.send(JSON.stringify({ type: 'log', instanceId, data: '', initial: true }));
@@ -69,11 +87,13 @@ async function subscribeToLogs(ws: ServerWebSocket<WebSocketData>, instanceId: s
 
   // Start watching if not already
   if (!fileWatchers.has(instanceId)) {
-    startWatching(instanceId, instance.logPath);
+    startWatching(instanceId, logPath);
   }
 
   // Send current status
-  ws.send(JSON.stringify({ type: 'status', instanceId, status: instance.status }));
+  if (status) {
+    ws.send(JSON.stringify({ type: 'status', instanceId, status }));
+  }
 }
 
 function unsubscribeFromLogs(ws: ServerWebSocket<WebSocketData>) {

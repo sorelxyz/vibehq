@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Ticket, TicketStatus, Project } from '@vibehq/shared';
 import { TICKET_STATUSES } from '@vibehq/shared';
-import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD, useRalphInstance, useCleanupWorktree, useCleanupAll, useDevServerStatus, useStartDevServer, useStopDevServer } from '../hooks/useTickets';
+import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD, useRalphInstance, useCleanupWorktree, useCleanupAll, useDevServerStatus, useStartDevServer, useStopDevServer, usePrdGenerationStatus } from '../hooks/useTickets';
 import { useImages, useUploadImage, useDeleteImage } from '../hooks/useImages';
 import { useRalphLogs } from '../hooks/useRalphLogs';
 import ConfirmDialog from './ConfirmDialog';
@@ -71,9 +71,18 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
   const startDevServer = useStartDevServer();
   const stopDevServer = useStopDevServer();
 
-  // WebSocket logs for running instances
+  // WebSocket logs for running RALPH instances
   const { logs, status: ralphStatus, isConnected, error: logsError } = useRalphLogs(
     ralphInstance?.id ?? null
+  );
+
+  // PRD generation status and logs
+  const { data: prdGeneration } = usePrdGenerationStatus(
+    ticket?.status === 'up_next' ? ticket?.id : undefined
+  );
+  const prdGenerationId = prdGeneration?.status === 'running' ? prdGeneration.generationId : null;
+  const { logs: prdLogs, status: prdStatus, isConnected: prdConnected, error: prdError } = useRalphLogs(
+    prdGenerationId ?? null
   );
 
   const handleUpload = (file: File) => {
@@ -356,6 +365,42 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                   <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">
                     <PRDViewer content={ticket.prdContent} />
                   </div>
+                ) : prdGeneration?.status === 'running' ? (
+                  /* PRD Generation in progress - show live logs */
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span className="text-sm font-medium text-purple-600 dark:text-purple-400">Generating PRD...</span>
+                    </div>
+                    <div className="h-64 border border-gray-300 dark:border-neutral-700 rounded-lg overflow-hidden">
+                      <RalphLogViewer
+                        logs={prdLogs}
+                        status={prdStatus}
+                        isConnected={prdConnected}
+                        error={prdError}
+                      />
+                    </div>
+                  </div>
+                ) : prdGeneration?.status === 'failed' ? (
+                  /* PRD Generation failed */
+                  <div className="space-y-3">
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-red-600 dark:text-red-400 text-sm font-medium">PRD generation failed</p>
+                      {prdGeneration.error && (
+                        <p className="text-red-500 dark:text-red-400 text-xs mt-1">{prdGeneration.error}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleGeneratePRD}
+                      disabled={generatePRD.isPending}
+                      className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
+                    >
+                      Retry Generate PRD
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={handleGeneratePRD}
@@ -368,7 +413,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        Generating PRD...
+                        Starting...
                       </span>
                     ) : (
                       'Generate PRD'
