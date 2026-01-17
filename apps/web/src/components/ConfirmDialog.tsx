@@ -22,20 +22,20 @@ export default function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onCancel} />
-      <div className="relative bg-neutral-900 rounded-lg shadow-xl w-full max-w-sm mx-4 border border-neutral-800">
+      <div className="relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-sm mx-4 border border-gray-200 dark:border-neutral-800">
         <div className="p-6">
-          <h2 className="text-lg font-semibold mb-2">{title}</h2>
-          <p className="text-neutral-400 mb-6">{message}</p>
+          <h2 className="text-lg font-semibold mb-2 text-gray-900 dark:text-neutral-100">{title}</h2>
+          <p className="text-gray-600 dark:text-neutral-400 mb-6">{message}</p>
           <div className="flex justify-end gap-3">
             <button
               onClick={onCancel}
-              className="px-4 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={onConfirm}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-lg transition-colors text-white ${
                 isDestructive
                   ? 'bg-red-600 hover:bg-red-700'
                   : 'bg-blue-600 hover:bg-blue-700'
