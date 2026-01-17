@@ -8,6 +8,7 @@ interface KanbanColumnProps {
   tickets: Ticket[];
   projects: Project[];
   onTicketClick: (ticket: Ticket) => void;
+  isLast?: boolean;
 }
 
 const STATUS_LABELS: Record<TicketStatus, string> = {
@@ -54,18 +55,18 @@ const STATUS_ICONS: Record<TicketStatus, React.ReactNode> = {
   ),
 };
 
-export default function KanbanColumn({ status, tickets, projects, onTicketClick }: KanbanColumnProps) {
+export default function KanbanColumn({ status, tickets, projects, onTicketClick, isLast = false }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   const getProject = (projectId: string) => projects.find(p => p.id === projectId);
 
   return (
     <div
-      className={`flex flex-col w-[280px] min-w-[280px] bg-white dark:bg-neutral-900 rounded-lg transition-colors ${
+      className={`flex flex-col w-[280px] min-w-[280px] rounded-lg transition-colors ${
         isOver ? 'ring-2 ring-blue-500 bg-gray-50 dark:bg-neutral-800' : ''
       }`}
     >
-      <div className="flex items-center gap-2 p-3 border-b border-gray-200 dark:border-neutral-800">
+      <div className={`flex items-center gap-2 p-3 ${!isLast ? 'border-r border-gray-200 dark:border-neutral-700' : ''}`}>
         {STATUS_ICONS[status]}
         <h3 className="font-semibold text-gray-900 dark:text-neutral-100">{STATUS_LABELS[status]}</h3>
         <span className="ml-auto text-sm text-gray-500 dark:text-neutral-500 bg-gray-100 dark:bg-neutral-800 px-2 py-0.5 rounded">

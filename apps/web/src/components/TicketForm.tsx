@@ -33,10 +33,12 @@ export default function TicketForm({
     } else {
       setTitle('');
       setDescription('');
-      setSelectedProjectId(projectId || (projects.length > 0 ? projects[0].id : ''));
+      setSelectedProjectId(projectId || '');
     }
     setError('');
   }, [ticket, projectId, projects]);
+
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,22 +89,33 @@ export default function TicketForm({
           <label htmlFor="project" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
             Project
           </label>
-          <select
-            id="project"
-            value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {projects.length === 0 ? (
-              <option value="">No projects available</option>
-            ) : (
-              projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))
+          <div className="flex items-center gap-2">
+            {selectedProject && (
+              <span
+                className="w-4 h-4 rounded-full flex-shrink-0"
+                style={{ backgroundColor: selectedProject.color }}
+              />
             )}
-          </select>
+            <select
+              id="project"
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="flex-1 px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {projects.length === 0 ? (
+                <option value="">No projects available</option>
+              ) : (
+                <>
+                  <option value="">Select a project...</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
+          </div>
         </div>
       )}
 
@@ -131,7 +144,7 @@ export default function TicketForm({
         </button>
         <button
           type="submit"
-          disabled={isLoading || projects.length === 0}
+          disabled={isLoading || projects.length === 0 || (!isEdit && !selectedProjectId)}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
         >
           {isLoading ? 'Saving...' : isEdit ? 'Update' : 'Create'}

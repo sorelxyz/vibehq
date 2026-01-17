@@ -126,13 +126,14 @@ export default function KanbanBoard({ tickets, projects, onTicketClick }: Kanban
       onDragEnd={handleDragEnd}
     >
       <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)]">
-        {TICKET_STATUSES.map((status) => (
+        {TICKET_STATUSES.map((status, index) => (
           <KanbanColumn
             key={status}
             status={status}
             tickets={getTicketsByStatus(status)}
             projects={projects}
             onTicketClick={onTicketClick}
+            isLast={index === TICKET_STATUSES.length - 1}
           />
         ))}
       </div>

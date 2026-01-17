@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import type { Ticket } from '@vibehq/shared';
 import { useTickets } from '../hooks/useTickets';
 import { useProjects } from '../hooks/useProjects';
 import KanbanBoard from '../components/KanbanBoard';
 import TicketDetailPanel from '../components/TicketDetailPanel';
 import NewTicketModal from '../components/NewTicketModal';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export default function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,8 +50,15 @@ export default function DashboardPage() {
   return (
     <div className="p-6 h-full flex flex-col">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">Dashboard</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">VibeHQ</h2>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <Link
+            to="/projects"
+            className="px-3 py-2 text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
+          >
+            Manage Projects
+          </Link>
           <select
             value={selectedProjectId || ''}
             onChange={(e) => setSelectedProjectId(e.target.value || undefined)}
