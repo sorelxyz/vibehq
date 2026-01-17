@@ -21,7 +21,7 @@ export default function TicketCard({ ticket, onClick, isDragging }: TicketCardPr
       onClick={onClick}
       className={`
         p-3 bg-gray-100 dark:bg-neutral-800 rounded-md border-l-4 cursor-pointer
-        hover:bg-gray-200 dark:hover:bg-neutral-750 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-neutral-900/50
+        hover:bg-gray-200 dark:hover:bg-neutral-700 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-neutral-900/50
         transition-all duration-150
         ${STATUS_BORDER_COLORS[ticket.status]}
         ${isDragging ? 'opacity-50 shadow-xl scale-105' : ''}

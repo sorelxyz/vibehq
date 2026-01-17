@@ -33,7 +33,7 @@ export default function KanbanColumn({ status, tickets, onTicketClick }: KanbanC
   return (
     <div
       className={`flex flex-col w-[280px] min-w-[280px] bg-white dark:bg-neutral-900 rounded-lg transition-colors ${
-        isOver ? 'ring-2 ring-blue-500 bg-gray-50 dark:bg-neutral-850' : ''
+        isOver ? 'ring-2 ring-blue-500 bg-gray-50 dark:bg-neutral-800' : ''
       }`}
     >
       <div className="flex items-center gap-2 p-3 border-b border-gray-200 dark:border-neutral-800">
