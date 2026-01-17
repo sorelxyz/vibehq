@@ -102,3 +102,38 @@ export function useRalphInstance(ticketId: string | undefined) {
     retry: false, // Don't retry on 404
   });
 }
+
+export function useCleanupWorktree() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (instanceId: string) => {
+      const res = await fetch(`/api/ralph/${instanceId}/cleanup`, { method: 'POST' });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to cleanup worktree');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ralph-instance'] });
+    },
+  });
+}
+
+export function useCleanupAll() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (instanceId: string) => {
+      const res = await fetch(`/api/ralph/${instanceId}/cleanup-all`, { method: 'POST' });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to cleanup');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ralph-instance'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
+  });
+}

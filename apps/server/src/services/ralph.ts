@@ -193,6 +193,48 @@ export function removeProcess(instanceId: string): void {
   runningProcesses.delete(instanceId);
 }
 
+/**
+ * Clean up a RALPH instance (removes worktree, keeps branch for review)
+ */
+export async function cleanupRalphInstance(
+  instanceId: string,
+  projectPath: string
+): Promise<void> {
+  const instance = await getRalphInstance(instanceId);
+  if (!instance) throw new Error('Instance not found');
+
+  // Delete worktree (keeps branch for review)
+  if (instance.worktreePath) {
+    await worktreeService.deleteWorktree(
+      projectPath,
+      instance.worktreePath,
+      undefined,
+      false // Don't delete branch yet
+    );
+  }
+}
+
+/**
+ * Clean up instance and delete branch
+ */
+export async function cleanupAndDeleteBranch(
+  instanceId: string,
+  projectPath: string,
+  branchName?: string
+): Promise<void> {
+  const instance = await getRalphInstance(instanceId);
+  if (!instance) throw new Error('Instance not found');
+
+  if (instance.worktreePath) {
+    await worktreeService.deleteWorktree(
+      projectPath,
+      instance.worktreePath,
+      branchName,
+      true // Delete branch too
+    );
+  }
+}
+
 function mapToRalphInstance(row: typeof ralphInstances.$inferSelect): RalphInstance {
   return {
     id: row.id,

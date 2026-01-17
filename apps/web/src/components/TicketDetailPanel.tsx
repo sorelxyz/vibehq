@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Ticket, TicketStatus, Project } from '@vibehq/shared';
 import { TICKET_STATUSES } from '@vibehq/shared';
-import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD, useRalphInstance } from '../hooks/useTickets';
+import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD, useRalphInstance, useCleanupWorktree, useCleanupAll } from '../hooks/useTickets';
 import { useImages, useUploadImage, useDeleteImage } from '../hooks/useImages';
 import { useRalphLogs } from '../hooks/useRalphLogs';
 import ConfirmDialog from './ConfirmDialog';
@@ -56,10 +56,13 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
   const uploadImage = useUploadImage();
   const deleteImage = useDeleteImage();
 
-  // Fetch RALPH instance only when ticket is in_progress
+  // Fetch RALPH instance when ticket is in_progress or in_testing
   const { data: ralphInstance } = useRalphInstance(
-    ticket?.status === 'in_progress' ? ticket?.id : undefined
+    ticket?.status === 'in_progress' || ticket?.status === 'in_testing' ? ticket?.id : undefined
   );
+
+  const cleanupWorktree = useCleanupWorktree();
+  const cleanupAll = useCleanupAll();
 
   // WebSocket logs for running instances
   const { logs, status: ralphStatus, isConnected, error: logsError } = useRalphLogs(
@@ -130,6 +133,22 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
 
   const handleApproveAndLaunch = async () => {
     await approvePRD.mutateAsync(ticket.id);
+  };
+
+  const handleMarkComplete = async () => {
+    await updateTicket.mutateAsync({ id: ticket.id, data: { status: 'completed' } });
+  };
+
+  const handleCleanup = async () => {
+    if (ralphInstance) {
+      await cleanupWorktree.mutateAsync(ralphInstance.id);
+    }
+  };
+
+  const handleCleanupAll = async () => {
+    if (ralphInstance) {
+      await cleanupAll.mutateAsync(ralphInstance.id);
+    }
   };
 
   return (
@@ -426,8 +445,57 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
               </div>
             )}
 
-            {/* In Testing, Completed - Read-only PRD */}
-            {['in_testing', 'completed'].includes(ticket.status) && (
+            {/* In Testing - Review branch and cleanup */}
+            {ticket.status === 'in_testing' && (
+              <div className="space-y-4">
+                {/* Branch info */}
+                {ticket.branchName && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-neutral-400">Branch:</span>
+                    <code className="text-sm bg-neutral-800 px-2 py-1 rounded">{ticket.branchName}</code>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleMarkComplete}
+                    disabled={updateTicket.isPending}
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg transition-colors font-medium"
+                  >
+                    {updateTicket.isPending ? 'Updating...' : 'Mark as Complete'}
+                  </button>
+                  <button
+                    onClick={handleCleanup}
+                    disabled={cleanupWorktree.isPending || !ralphInstance}
+                    className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:cursor-not-allowed rounded-lg transition-colors"
+                    title="Remove worktree but keep branch"
+                  >
+                    {cleanupWorktree.isPending ? 'Cleaning...' : 'Cleanup Worktree'}
+                  </button>
+                </div>
+
+                {(cleanupWorktree.isError || cleanupAll.isError) && (
+                  <p className="text-red-400 text-sm">
+                    {cleanupWorktree.error?.message || cleanupAll.error?.message || 'Cleanup failed'}
+                  </p>
+                )}
+
+                <p className="text-xs text-neutral-500">
+                  Review the branch, merge if satisfied, then mark complete. "Cleanup Worktree" removes the worktree but keeps the branch for merging.
+                </p>
+
+                {/* PRD Content */}
+                {ticket.prdContent && (
+                  <div className="p-3 bg-neutral-800 rounded-lg max-h-48 overflow-y-auto">
+                    <PRDViewer content={ticket.prdContent} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Completed - Read-only PRD */}
+            {ticket.status === 'completed' && (
               <div>
                 {ticket.prdContent ? (
                   <div className="p-3 bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">

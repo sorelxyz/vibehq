@@ -180,3 +180,19 @@
 - Completed RALPH moves ticket to 'in_testing'
 - Failed RALPH moves ticket back to 'in_review'
 - Status changes broadcast via WebSocket to connected clients
+
+## Item 17: Cleanup and Worktree Removal - COMPLETE
+- Added cleanup functions to services/ralph.ts:
+  - cleanupRalphInstance: removes worktree but keeps branch for review
+  - cleanupAndDeleteBranch: removes worktree and deletes branch
+- Added cleanup endpoints to routes/ralph.ts:
+  - POST /api/ralph/:id/cleanup - cleans up worktree only
+  - POST /api/ralph/:id/cleanup-all - cleans up worktree and deletes branch
+- Added frontend hooks in useTickets.ts:
+  - useCleanupWorktree: calls cleanup endpoint
+  - useCleanupAll: calls cleanup-all endpoint
+- Updated TicketDetailPanel.tsx for in_testing status:
+  - Branch name display
+  - "Mark as Complete" button moves ticket to completed
+  - "Cleanup Worktree" button removes worktree but preserves branch
+  - Instructions for user to review, merge, then complete

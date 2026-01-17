@@ -74,4 +74,48 @@ app.post('/tickets/:ticketId/launch-ralph', async (c) => {
   }
 });
 
+// POST /api/ralph/:id/cleanup - Clean up worktree (keep branch for review)
+app.post('/:id/cleanup', async (c) => {
+  const instanceId = c.req.param('id');
+
+  try {
+    const instance = await ralphService.getRalphInstance(instanceId);
+    if (!instance) return c.json({ error: 'Instance not found' }, 404);
+
+    const ticket = await ticketsService.getTicket(instance.ticketId);
+    if (!ticket) return c.json({ error: 'Ticket not found' }, 404);
+
+    const project = await projectsService.getProject(ticket.projectId);
+    if (!project) return c.json({ error: 'Project not found' }, 404);
+
+    await ralphService.cleanupRalphInstance(instanceId, project.path);
+    return c.json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json({ error: `Cleanup failed: ${message}` }, 500);
+  }
+});
+
+// POST /api/ralph/:id/cleanup-all - Clean up worktree and delete branch
+app.post('/:id/cleanup-all', async (c) => {
+  const instanceId = c.req.param('id');
+
+  try {
+    const instance = await ralphService.getRalphInstance(instanceId);
+    if (!instance) return c.json({ error: 'Instance not found' }, 404);
+
+    const ticket = await ticketsService.getTicket(instance.ticketId);
+    if (!ticket) return c.json({ error: 'Ticket not found' }, 404);
+
+    const project = await projectsService.getProject(ticket.projectId);
+    if (!project) return c.json({ error: 'Project not found' }, 404);
+
+    await ralphService.cleanupAndDeleteBranch(instanceId, project.path, ticket.branchName ?? undefined);
+    return c.json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json({ error: `Cleanup failed: ${message}` }, 500);
+  }
+});
+
 export default app;
