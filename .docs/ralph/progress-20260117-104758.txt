@@ -1,0 +1,211 @@
+# Progress
+
+## Item 1: Project Scaffolding and Monorepo Setup - COMPLETE
+- Created Bun workspaces monorepo structure
+- Set up @vibehq/web (React + Vite + TailwindCSS)
+- Set up @vibehq/server (Hono on port 3001)
+- Set up @vibehq/shared (TypeScript types)
+- Configured Vite proxy for /api and /uploads
+- Created Layout with sidebar navigation
+- Created placeholder Dashboard and Projects pages
+- Created API client utility
+
+## Item 2: Database Schema with Drizzle ORM - COMPLETE
+- Created db/schema.ts with all tables (projects, tickets, ticket_images, ralph_instances)
+- Created db/index.ts for database connection with WAL mode and foreign keys enabled
+- Created db/migrate.ts with CREATE TABLE IF NOT EXISTS statements
+- Server runs migrations on startup
+- Database file created at data/vibehq.db
+
+## Item 3: Backend API - Projects CRUD - COMPLETE
+- Created services/projects.ts with CRUD operations (list, get, create, update, delete)
+- Created routes/projects.ts with Hono endpoints
+- Wired up routes in server index.ts
+- CORS configured for localhost:5173
+- Validation returns 400 for missing required fields
+
+## Item 4: Backend API - Tickets CRUD - COMPLETE
+- Created services/tickets.ts with CRUD operations (list, get, create, update, delete)
+- Added updateTicketStatus and reorderTickets for drag-and-drop support
+- Added getNextPosition to calculate position for new tickets
+- Created routes/tickets.ts with all endpoints including /reorder and /:id/status
+- Validation for required fields and valid status values
+- Tickets created in 'backlog' status by default
+
+## Item 5: Frontend Shell and Routing - COMPLETE
+- (Already done in Item 1) React + Vite + TailwindCSS setup
+- BrowserRouter and Routes configured in App.tsx
+- QueryClient with TanStack Query provider
+- Layout component with sidebar navigation
+- Dark theme with neutral-950 background
+- API client utility in lib/api.ts
+
+## Item 6: Projects Management UI - COMPLETE
+- Created useProjects hook with TanStack Query (list, create, update, delete mutations)
+- Built ProjectsPage with responsive card grid (2-3 columns)
+- Created ProjectModal for create/edit with form validation
+- Created ConfirmDialog for delete confirmation (reusable)
+- Loading states with skeleton cards
+- Empty state with call-to-action
+
+## Item 7: Kanban Board Layout - COMPLETE
+- Created useTickets hook with TanStack Query (list by projectId, CRUD mutations)
+- Created KanbanBoard component with 6 columns for ticket statuses
+- Created KanbanColumn component with status header, count badge, and scrollable ticket list
+- Created TicketCard component with status-colored left border, title, description
+- Updated DashboardPage with project filter dropdown and kanban board
+- Loading skeleton for columns while fetching
+- Empty state for columns with no tickets
+- Basic ticket detail modal on click (placeholder for Item 9)
+
+## Item 8: Drag and Drop Implementation - COMPLETE
+- Added useUpdateTicketStatus and useReorderTickets mutations to useTickets hook
+- Created SortableTicketCard component using @dnd-kit/sortable
+- Updated KanbanColumn with useDroppable and SortableContext
+- Updated KanbanBoard with DndContext, sensors (Pointer, Keyboard), and drag handlers
+- Drag ticket between columns updates status and position via API
+- Reorder tickets within same column via batch reorder API
+- DragOverlay shows dragged ticket with visual feedback
+- Column highlights when dragging over (ring-2 ring-blue-500)
+
+## Item 9: Ticket Detail Panel - COMPLETE
+- Created TicketDetailPanel slide-out component (slides from right, 480px max-width)
+- Escape key and backdrop click close the panel
+- Inline editing for title (click to edit) and description (Edit button)
+- Status dropdown to change ticket status
+- Delete button with ConfirmDialog confirmation
+- Timestamps displayed in relative format ("2 hours ago")
+- Project badge showing project name
+- Placeholder sections for Attachments and PRD (to be implemented in later items)
+- Created TicketForm component for create/edit operations
+- Created NewTicketModal component for creating tickets from dashboard
+- Updated DashboardPage with URL sync (?ticket=xxx query param)
+- Deep linking support: opening URL with ticket param opens panel
+
+## Item 10: Image Upload and Attachments - COMPLETE
+- Created services/images.ts with upload, delete, and list functions
+- Created routes/images.ts with POST/GET/DELETE endpoints for image management
+- Created routes/static.ts to serve uploaded files via /uploads/*
+- Updated server index.ts with image routes and uploads directory initialization
+- Created useImages hook with TanStack Query for frontend image state management
+- Created ImageUpload component with drag-and-drop, file picker, thumbnail grid
+- Updated TicketDetailPanel to integrate ImageUpload component
+- Images stored in data/uploads/ with metadata in ticket_images table
+- File type validation (jpg, png, gif, webp) and size validation (max 10MB)
+
+## Item 11: PRD Generation with Claude Code - COMPLETE
+- Created utils/shell.ts with exec() function for spawning shell commands with timeout
+- Created services/prd-generator.ts with generatePRD() and isClaudeCodeAvailable()
+- PRD prompt template includes project info, ticket details, and attached image paths
+- Added POST /api/tickets/:id/generate-prd endpoint to routes/tickets.ts
+- Endpoint validates ticket exists, project exists, and Claude Code is installed
+- PRD content saved to ticket.prdContent and status changes to 'in_review'
+- Added useGeneratePRD hook to frontend with TanStack Query mutation
+- 2 minute timeout for Claude Code execution
+
+## Item 13: Git Worktree Management - COMPLETE
+- Created services/worktree.ts with git worktree operations
+- createWorktree: creates worktree with new branch (ralph/{ticketId}-{slug})
+- deleteWorktree: removes worktree and optionally deletes branch
+- listWorktrees: lists all RALPH worktrees for a project
+- isGitRepo: validates if path is a git repository
+- getMainBranch: detects main/master branch name
+- WorktreeInfo type already existed in shared package
+
+## Item 12: PRD Review and Approval UI - COMPLETE
+- Created PRDViewer.tsx with basic markdown rendering (headers, code blocks, checkboxes, lists)
+- Created PRDEditor.tsx with textarea for editing PRD markdown content
+- Added useApprovePRD hook to useTickets.ts for approving PRDs
+- Added POST /api/tickets/:id/approve endpoint to backend routes
+- Updated TicketDetailPanel.tsx with conditional PRD rendering:
+  - Backlog: informative message to move to Up Next
+  - Up Next: "Generate PRD" button with loading state
+  - In Review: PRD viewer/editor + "Approve & Launch RALPH" button
+  - In Progress/Testing/Completed: Read-only PRD viewer
+- Loading states and error handling for all PRD operations
+
+## Item 14: RALPH Instance Management - COMPLETE
+- Created services/ralph.ts with RALPH instance management:
+  - createRalphInstance: creates worktree, PRD file, progress file, RALPH script
+  - startRalphInstance: spawns process, tracks PID, updates status to 'running'
+  - stopRalphInstance: kills process, updates status to 'failed'
+  - getRalphInstance, getRalphInstanceForTicket, getRunningInstances
+  - isProcessRunning: checks if PID is still active
+  - In-memory process tracking with Map
+- Created routes/ralph.ts with API endpoints:
+  - GET /api/ralph/:id - get instance status
+  - GET /api/ralph/:id/logs - get log contents
+  - POST /api/ralph/:id/stop - stop running instance
+  - GET /api/tickets/:ticketId/ralph - get instance for ticket
+  - POST /api/tickets/:ticketId/launch-ralph - create and start instance
+- Updated tickets approve endpoint to create and launch RALPH on approval
+- Added branchName to UpdateTicketInput type in shared package
+- Updated tickets service to support branchName in updateTicket
+- Wired up ralph routes in server index.ts
+
+## Item 15: WebSocket Log Tailing - COMPLETE
+- Created websocket.ts with WebSocket handler for Bun:
+  - Tracks subscriptions per instanceId
+  - File watcher for real-time log updates
+  - Broadcasts new log content to subscribers
+  - broadcastStatus function for status change notifications
+- Updated server index.ts to include websocket handler
+- Created useRalphLogs.ts hook:
+  - WebSocket connection with auto-reconnect (exponential backoff)
+  - Handles subscribe/unsubscribe messages
+  - Tracks logs, status, connection state, and errors
+- Created RalphLogViewer.tsx component:
+  - Status bar with connection indicator
+  - Auto-scroll to bottom on new logs
+  - Error message display
+  - Monospace font for log output
+- Updated vite.config.ts with WebSocket proxy (/ws)
+- Added useRalphInstance hook to useTickets.ts
+- Updated TicketDetailPanel.tsx:
+  - Fetches RALPH instance for in_progress tickets
+  - Shows RalphLogViewer with real-time logs
+  - Displays branch name badge
+
+## Item 16: Process Monitoring and Auto-Status Updates - COMPLETE
+- Created services/process-monitor.ts:
+  - startProcessMonitor: polls every 5 seconds for running instances
+  - stopProcessMonitor: stops the polling interval
+  - checkRunningInstances: checks if PIDs are still active
+  - determineCompletionStatus: reads logs for RALPH_COMPLETE or error patterns
+  - recoverOrphanedInstances: handles instances left running after server restart
+- Updated server index.ts:
+  - Calls recoverOrphanedInstances on startup
+  - Starts process monitor on startup
+  - Graceful shutdown handlers (SIGINT/SIGTERM) stop the monitor
+- Completed RALPH moves ticket to 'in_testing'
+- Failed RALPH moves ticket back to 'in_review'
+- Status changes broadcast via WebSocket to connected clients
+
+## Item 17: Cleanup and Worktree Removal - COMPLETE
+- Added cleanup functions to services/ralph.ts:
+  - cleanupRalphInstance: removes worktree but keeps branch for review
+  - cleanupAndDeleteBranch: removes worktree and deletes branch
+- Added cleanup endpoints to routes/ralph.ts:
+  - POST /api/ralph/:id/cleanup - cleans up worktree only
+  - POST /api/ralph/:id/cleanup-all - cleans up worktree and deletes branch
+- Added frontend hooks in useTickets.ts:
+  - useCleanupWorktree: calls cleanup endpoint
+  - useCleanupAll: calls cleanup-all endpoint
+- Updated TicketDetailPanel.tsx for in_testing status:
+  - Branch name display
+  - "Mark as Complete" button moves ticket to completed
+  - "Cleanup Worktree" button removes worktree but preserves branch
+  - Instructions for user to review, merge, then complete
+
+## Item 18: Error Handling and Edge Cases - COMPLETE
+- Created middleware/error-handler.ts for consistent API error responses
+- Created utils/errors.ts with NotFoundError, ValidationError, ConflictError classes
+- Created Toast.tsx component for frontend error notifications
+- Created ErrorBoundary.tsx component for React error catching
+- Updated main.tsx with ErrorBoundary and ToastProvider wrappers
+- Updated server index.ts with error handler middleware
+- Added project path validation in routes/projects.ts:
+  - Validates path exists and is a directory
+  - Validates path is a git repository
+  - Returns 400 with descriptive error if validation fails
+- WebSocket reconnection already implemented in useRalphLogs with exponential backoff

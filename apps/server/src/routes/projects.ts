@@ -71,4 +71,32 @@ app.delete('/:id', async (c) => {
   return c.json({ success: true });
 });
 
+// POST /api/projects/pick-folder - Open native folder picker dialog
+app.post('/pick-folder', async (c) => {
+  try {
+    const proc = Bun.spawn([
+      'osascript',
+      '-e',
+      'POSIX path of (choose folder with prompt "Select project folder")',
+    ], {
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+
+    const stdout = await new Response(proc.stdout).text();
+    const stderr = await new Response(proc.stderr).text();
+    const exitCode = await proc.exited;
+
+    if (exitCode !== 0) {
+      // User cancelled or error
+      return c.json({ cancelled: true });
+    }
+
+    const folderPath = stdout.trim().replace(/\/$/, ''); // Remove trailing slash
+    return c.json({ path: folderPath });
+  } catch (error) {
+    return c.json({ error: 'Failed to open folder picker' }, 500);
+  }
+});
+
 export default app;
