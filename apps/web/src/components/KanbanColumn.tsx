@@ -32,21 +32,21 @@ export default function KanbanColumn({ status, tickets, onTicketClick }: KanbanC
 
   return (
     <div
-      className={`flex flex-col w-[280px] min-w-[280px] bg-neutral-900 rounded-lg transition-colors ${
-        isOver ? 'ring-2 ring-blue-500 bg-neutral-850' : ''
+      className={`flex flex-col w-[280px] min-w-[280px] bg-white dark:bg-neutral-900 rounded-lg transition-colors ${
+        isOver ? 'ring-2 ring-blue-500 bg-gray-50 dark:bg-neutral-850' : ''
       }`}
     >
-      <div className="flex items-center gap-2 p-3 border-b border-neutral-800">
+      <div className="flex items-center gap-2 p-3 border-b border-gray-200 dark:border-neutral-800">
         <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[status]}`} />
-        <h3 className="font-semibold text-neutral-100">{STATUS_LABELS[status]}</h3>
-        <span className="ml-auto text-sm text-neutral-500 bg-neutral-800 px-2 py-0.5 rounded">
+        <h3 className="font-semibold text-gray-900 dark:text-neutral-100">{STATUS_LABELS[status]}</h3>
+        <span className="ml-auto text-sm text-gray-500 dark:text-neutral-500 bg-gray-100 dark:bg-neutral-800 px-2 py-0.5 rounded">
           {tickets.length}
         </span>
       </div>
       <div ref={setNodeRef} className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[100px]">
         <SortableContext items={tickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
           {tickets.length === 0 ? (
-            <p className="text-center text-sm text-neutral-600 py-4">No tickets</p>
+            <p className="text-center text-sm text-gray-500 dark:text-neutral-600 py-4">No tickets</p>
           ) : (
             tickets.map((ticket) => (
               <SortableTicketCard

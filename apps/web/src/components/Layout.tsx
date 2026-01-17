@@ -1,11 +1,12 @@
 import { Outlet, NavLink } from 'react-router-dom';
+import { ThemeToggle } from './ThemeToggle';
 
 export default function Layout() {
   return (
     <div className="flex h-screen">
-      <aside className="w-60 bg-neutral-900 border-r border-neutral-800 flex flex-col">
-        <div className="p-4 border-b border-neutral-800">
-          <h1 className="text-xl font-bold text-neutral-100">RALPH Blaster</h1>
+      <aside className="w-60 bg-white dark:bg-neutral-900 border-r border-gray-200 dark:border-neutral-800 flex flex-col">
+        <div className="p-4 border-b border-gray-200 dark:border-neutral-800">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-neutral-100">VibeHQ</h1>
         </div>
         <nav className="flex-1 p-2">
           <NavLink
@@ -13,8 +14,8 @@ export default function Layout() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                 isActive
-                  ? 'bg-neutral-800 text-neutral-100'
-                  : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100'
+                  ? 'bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-neutral-100'
+                  : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-gray-900 dark:hover:text-neutral-100'
               }`
             }
           >
@@ -28,8 +29,8 @@ export default function Layout() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                 isActive
-                  ? 'bg-neutral-800 text-neutral-100'
-                  : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100'
+                  ? 'bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-neutral-100'
+                  : 'text-gray-600 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-gray-900 dark:hover:text-neutral-100'
               }`
             }
           >
@@ -39,8 +40,9 @@ export default function Layout() {
             Projects
           </NavLink>
         </nav>
+        <ThemeToggle />
       </aside>
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto bg-gray-50 dark:bg-neutral-950">
         <Outlet />
       </main>
     </div>

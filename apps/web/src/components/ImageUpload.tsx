@@ -70,7 +70,7 @@ export default function ImageUpload({ ticketId, images, onUpload, onDelete, isUp
         className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
           isDragOver
             ? 'border-blue-500 bg-blue-500/10'
-            : 'border-neutral-700 hover:border-neutral-600'
+            : 'border-gray-300 dark:border-neutral-700 hover:border-gray-400 dark:hover:border-neutral-600'
         } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
       >
         <input
@@ -86,17 +86,17 @@ export default function ImageUpload({ ticketId, images, onUpload, onDelete, isUp
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <span className="text-neutral-400">Uploading...</span>
+            <span className="text-gray-600 dark:text-neutral-400">Uploading...</span>
           </div>
         ) : (
           <>
-            <svg className="w-8 h-8 mx-auto text-neutral-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 mx-auto text-gray-500 dark:text-neutral-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <p className="text-sm text-neutral-400">
+            <p className="text-sm text-gray-600 dark:text-neutral-400">
               Drop images here or click to upload
             </p>
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-neutral-500 mt-1">
               JPG, PNG, GIF, WebP up to 10MB
             </p>
           </>
@@ -109,7 +109,7 @@ export default function ImageUpload({ ticketId, images, onUpload, onDelete, isUp
           {images.map((image) => (
             <div
               key={image.id}
-              className="group relative bg-neutral-800 rounded-lg overflow-hidden"
+              className="group relative bg-gray-200 dark:bg-neutral-800 rounded-lg overflow-hidden"
             >
               <a
                 href={`/uploads/${image.storagePath}`}

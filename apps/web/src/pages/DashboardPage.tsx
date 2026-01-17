@@ -49,12 +49,12 @@ export default function DashboardPage() {
   return (
     <div className="p-6 h-full flex flex-col">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Dashboard</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">Dashboard</h2>
         <div className="flex items-center gap-4">
           <select
             value={selectedProjectId || ''}
             onChange={(e) => setSelectedProjectId(e.target.value || undefined)}
-            className="px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-md text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-md text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Projects</option>
             {projects?.map((project) => (
@@ -65,7 +65,7 @@ export default function DashboardPage() {
           </select>
           <button
             onClick={() => setShowNewTicketModal(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-medium transition-colors"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors"
           >
             New Ticket
           </button>
@@ -75,13 +75,13 @@ export default function DashboardPage() {
       {isLoading ? (
         <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)]">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="w-[280px] min-w-[280px] bg-neutral-900 rounded-lg animate-pulse">
-              <div className="p-3 border-b border-neutral-800">
-                <div className="h-5 bg-neutral-800 rounded w-24" />
+            <div key={i} className="w-[280px] min-w-[280px] bg-white dark:bg-neutral-900 rounded-lg animate-pulse">
+              <div className="p-3 border-b border-gray-200 dark:border-neutral-800">
+                <div className="h-5 bg-gray-200 dark:bg-neutral-800 rounded w-24" />
               </div>
               <div className="p-2 space-y-2">
                 {Array.from({ length: 3 }).map((_, j) => (
-                  <div key={j} className="h-20 bg-neutral-800 rounded" />
+                  <div key={j} className="h-20 bg-gray-200 dark:bg-neutral-800 rounded" />
                 ))}
               </div>
             </div>

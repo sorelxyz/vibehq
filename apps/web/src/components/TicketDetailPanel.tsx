@@ -151,12 +151,6 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
     }
   };
 
-  const handleOpenInCursor = () => {
-    if (ralphInstance?.worktreePath) {
-      window.open(`cursor://file${ralphInstance.worktreePath}`, '_blank');
-    }
-  };
-
   return (
     <>
       <div
@@ -167,7 +161,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
       />
 
       <div
-        className={`fixed right-0 top-0 h-full w-full max-w-lg bg-neutral-900 border-l border-neutral-800 z-50 transform transition-transform duration-300 ease-out overflow-y-auto ${
+        className={`fixed right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-neutral-900 border-l border-gray-200 dark:border-neutral-800 z-50 transform transition-transform duration-300 ease-out overflow-y-auto ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -175,7 +169,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={onClose}
-              className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition-colors text-gray-700 dark:text-neutral-300"
               aria-label="Close panel"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +178,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+              className="p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-400/10 rounded-lg transition-colors"
               aria-label="Delete ticket"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,7 +195,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-xl font-bold text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveTitle();
@@ -214,7 +208,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                 <button
                   onClick={handleSaveTitle}
                   disabled={updateTicket.isPending}
-                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                  className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >
                   Save
                 </button>
@@ -222,7 +216,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
             ) : (
               <h2
                 onClick={() => setIsEditingTitle(true)}
-                className="text-xl font-bold cursor-pointer hover:text-blue-400 transition-colors"
+                className="text-xl font-bold cursor-pointer hover:text-blue-500 dark:hover:text-blue-400 transition-colors text-gray-900 dark:text-neutral-100"
               >
                 {ticket.title}
               </h2>
@@ -232,7 +226,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
           {/* Project badge */}
           {project && (
             <div className="mb-4">
-              <span className="inline-block px-2 py-1 text-xs bg-neutral-800 text-neutral-300 rounded">
+              <span className="inline-block px-2 py-1 text-xs bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 rounded">
                 {project.name}
               </span>
             </div>
@@ -240,11 +234,11 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
 
           {/* Status dropdown */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-neutral-400 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-neutral-400 mb-2">Status</label>
             <select
               value={ticket.status}
               onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
-              className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {TICKET_STATUSES.map((status) => (
                 <option key={status} value={status}>
@@ -255,13 +249,13 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
           </div>
 
           {/* Timestamps */}
-          <div className="mb-6 flex gap-6 text-sm text-neutral-500">
+          <div className="mb-6 flex gap-6 text-sm text-gray-500 dark:text-neutral-500">
             <div>
-              <span className="text-neutral-400">Created:</span>{' '}
+              <span className="text-gray-600 dark:text-neutral-400">Created:</span>{' '}
               {formatRelativeTime(ticket.createdAt)}
             </div>
             <div>
-              <span className="text-neutral-400">Updated:</span>{' '}
+              <span className="text-gray-600 dark:text-neutral-400">Updated:</span>{' '}
               {formatRelativeTime(ticket.updatedAt)}
             </div>
           </div>
@@ -269,11 +263,11 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
           {/* Description */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-neutral-400">Description</label>
+              <label className="text-sm font-medium text-gray-600 dark:text-neutral-400">Description</label>
               {!isEditingDescription && (
                 <button
                   onClick={() => setIsEditingDescription(true)}
-                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                  className="text-sm text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
                 >
                   Edit
                 </button>
@@ -284,7 +278,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                 <textarea
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  className="w-full h-32 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full h-32 px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   autoFocus
                 />
                 <div className="flex justify-end gap-2 mt-2">
@@ -293,21 +287,21 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                       setEditDescription(ticket.description);
                       setIsEditingDescription(false);
                     }}
-                    className="px-3 py-1 text-neutral-300 hover:bg-neutral-800 rounded-lg transition-colors"
+                    className="px-3 py-1 text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSaveDescription}
                     disabled={updateTicket.isPending}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                   >
                     Save
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="text-neutral-300 whitespace-pre-wrap">
+              <p className="text-gray-700 dark:text-neutral-300 whitespace-pre-wrap">
                 {ticket.description || 'No description'}
               </p>
             )}
@@ -315,7 +309,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
 
           {/* Attachments */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-neutral-400 mb-2">Attachments</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-neutral-400 mb-2">Attachments</label>
             <ImageUpload
               ticketId={ticket.id}
               images={images}
@@ -327,11 +321,11 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
 
           {/* PRD Section */}
           <div>
-            <label className="block text-sm font-medium text-neutral-400 mb-2">PRD</label>
+            <label className="block text-sm font-medium text-gray-600 dark:text-neutral-400 mb-2">PRD</label>
 
             {/* Backlog status - no PRD actions */}
             {ticket.status === 'backlog' && (
-              <p className="text-neutral-500 text-sm italic">
+              <p className="text-gray-500 dark:text-neutral-500 text-sm italic">
                 Move ticket to "Up Next" to generate a PRD.
               </p>
             )}
@@ -340,14 +334,14 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
             {ticket.status === 'up_next' && (
               <div>
                 {ticket.prdContent ? (
-                  <div className="p-3 bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">
+                  <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">
                     <PRDViewer content={ticket.prdContent} />
                   </div>
                 ) : (
                   <button
                     onClick={handleGeneratePRD}
                     disabled={generatePRD.isPending}
-                    className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed rounded-lg transition-colors font-medium"
+                    className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
                   >
                     {generatePRD.isPending ? (
                       <span className="flex items-center justify-center gap-2">
@@ -363,7 +357,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                   </button>
                 )}
                 {generatePRD.isError && (
-                  <p className="mt-2 text-red-400 text-sm">
+                  <p className="mt-2 text-red-500 dark:text-red-400 text-sm">
                     {generatePRD.error?.message || 'Failed to generate PRD'}
                   </p>
                 )}
@@ -382,7 +376,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                   />
                 ) : (
                   <>
-                    <div className="p-3 bg-neutral-800 rounded-lg max-h-64 overflow-y-auto mb-3">
+                    <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-64 overflow-y-auto mb-3">
                       <PRDViewer
                         content={ticket.prdContent}
                         onEdit={() => setIsEditingPRD(true)}
@@ -391,7 +385,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                     <button
                       onClick={handleApproveAndLaunch}
                       disabled={approvePRD.isPending}
-                      className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg transition-colors font-medium"
+                      className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
                     >
                       {approvePRD.isPending ? (
                         <span className="flex items-center justify-center gap-2">
@@ -406,7 +400,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                       )}
                     </button>
                     {approvePRD.isError && (
-                      <p className="mt-2 text-red-400 text-sm">
+                      <p className="mt-2 text-red-500 dark:text-red-400 text-sm">
                         {approvePRD.error?.message || 'Failed to approve PRD'}
                       </p>
                     )}
@@ -422,23 +416,14 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                 {ralphInstance && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-neutral-400">RALPH Progress</span>
-                      <div className="flex items-center gap-2">
-                        {ticket.branchName && (
-                          <code className="text-xs bg-neutral-800 px-2 py-1 rounded text-neutral-300">
-                            {ticket.branchName}
-                          </code>
-                        )}
-                        <button
-                          onClick={handleOpenInCursor}
-                          className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded transition-colors"
-                          title="Open worktree in Cursor"
-                        >
-                          Open in Cursor
-                        </button>
-                      </div>
+                      <span className="text-sm font-medium text-gray-600 dark:text-neutral-400">RALPH Progress</span>
+                      {ticket.branchName && (
+                        <code className="text-xs bg-gray-200 dark:bg-neutral-800 px-2 py-1 rounded text-gray-700 dark:text-neutral-300">
+                          {ticket.branchName}
+                        </code>
+                      )}
                     </div>
-                    <div className="h-64 border border-neutral-700 rounded-lg overflow-hidden">
+                    <div className="h-64 border border-gray-300 dark:border-neutral-700 rounded-lg overflow-hidden">
                       <RalphLogViewer
                         logs={logs}
                         status={ralphStatus}
@@ -451,11 +436,11 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
 
                 {/* PRD Content */}
                 {ticket.prdContent ? (
-                  <div className="p-3 bg-neutral-800 rounded-lg max-h-48 overflow-y-auto">
+                  <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-48 overflow-y-auto">
                     <PRDViewer content={ticket.prdContent} />
                   </div>
                 ) : (
-                  <p className="text-neutral-500 text-sm italic">No PRD generated.</p>
+                  <p className="text-gray-500 dark:text-neutral-500 text-sm italic">No PRD generated.</p>
                 )}
               </div>
             )}
@@ -465,20 +450,9 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
               <div className="space-y-4">
                 {/* Branch info */}
                 {ticket.branchName && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-neutral-400">Branch:</span>
-                      <code className="text-sm bg-neutral-800 px-2 py-1 rounded">{ticket.branchName}</code>
-                    </div>
-                    {ralphInstance?.worktreePath && (
-                      <button
-                        onClick={handleOpenInCursor}
-                        className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded transition-colors"
-                        title="Open worktree in Cursor"
-                      >
-                        Open in Cursor
-                      </button>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 dark:text-neutral-400">Branch:</span>
+                    <code className="text-sm bg-gray-200 dark:bg-neutral-800 px-2 py-1 rounded text-gray-900 dark:text-neutral-100">{ticket.branchName}</code>
                   </div>
                 )}
 
@@ -487,14 +461,14 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                   <button
                     onClick={handleMarkComplete}
                     disabled={updateTicket.isPending}
-                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg transition-colors font-medium"
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
                   >
                     {updateTicket.isPending ? 'Updating...' : 'Mark as Complete'}
                   </button>
                   <button
                     onClick={handleCleanup}
                     disabled={cleanupWorktree.isPending || !ralphInstance}
-                    className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 disabled:bg-neutral-800 disabled:cursor-not-allowed rounded-lg transition-colors"
+                    className="px-4 py-2 bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 disabled:bg-gray-300 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed text-gray-900 dark:text-neutral-100 rounded-lg transition-colors"
                     title="Remove worktree but keep branch"
                   >
                     {cleanupWorktree.isPending ? 'Cleaning...' : 'Cleanup Worktree'}
@@ -502,18 +476,18 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                 </div>
 
                 {(cleanupWorktree.isError || cleanupAll.isError) && (
-                  <p className="text-red-400 text-sm">
+                  <p className="text-red-500 dark:text-red-400 text-sm">
                     {cleanupWorktree.error?.message || cleanupAll.error?.message || 'Cleanup failed'}
                   </p>
                 )}
 
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-gray-500 dark:text-neutral-500">
                   Review the branch, merge if satisfied, then mark complete. "Cleanup Worktree" removes the worktree but keeps the branch for merging.
                 </p>
 
                 {/* PRD Content */}
                 {ticket.prdContent && (
-                  <div className="p-3 bg-neutral-800 rounded-lg max-h-48 overflow-y-auto">
+                  <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-48 overflow-y-auto">
                     <PRDViewer content={ticket.prdContent} />
                   </div>
                 )}
@@ -524,11 +498,11 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
             {ticket.status === 'completed' && (
               <div>
                 {ticket.prdContent ? (
-                  <div className="p-3 bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">
+                  <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">
                     <PRDViewer content={ticket.prdContent} />
                   </div>
                 ) : (
-                  <p className="text-neutral-500 text-sm italic">No PRD generated.</p>
+                  <p className="text-gray-500 dark:text-neutral-500 text-sm italic">No PRD generated.</p>
                 )}
               </div>
             )}

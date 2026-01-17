@@ -68,7 +68,7 @@ export default function TicketForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-neutral-300 mb-1">
+        <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
           Title
         </label>
         <input
@@ -76,7 +76,7 @@ export default function TicketForm({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Enter ticket title"
           autoFocus
         />
@@ -84,14 +84,14 @@ export default function TicketForm({
 
       {!isEdit && (
         <div>
-          <label htmlFor="project" className="block text-sm font-medium text-neutral-300 mb-1">
+          <label htmlFor="project" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
             Project
           </label>
           <select
             id="project"
             value={selectedProjectId}
             onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {projects.length === 0 ? (
               <option value="">No projects available</option>
@@ -107,32 +107,32 @@ export default function TicketForm({
       )}
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-neutral-300 mb-1">
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
           Description
         </label>
         <textarea
           id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full h-32 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full h-32 px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           placeholder="Describe what needs to be done"
         />
       </div>
 
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
 
       <div className="flex justify-end gap-3 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-neutral-300 hover:bg-neutral-800 rounded-lg transition-colors"
+          className="px-4 py-2 text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isLoading || projects.length === 0}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
         >
           {isLoading ? 'Saving...' : isEdit ? 'Update' : 'Create'}
         </button>

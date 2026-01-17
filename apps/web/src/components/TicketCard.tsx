@@ -20,16 +20,16 @@ export default function TicketCard({ ticket, onClick, isDragging }: TicketCardPr
     <div
       onClick={onClick}
       className={`
-        p-3 bg-neutral-800 rounded-md border-l-4 cursor-pointer
-        hover:bg-neutral-750 hover:shadow-lg hover:shadow-neutral-900/50
+        p-3 bg-gray-100 dark:bg-neutral-800 rounded-md border-l-4 cursor-pointer
+        hover:bg-gray-200 dark:hover:bg-neutral-750 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-neutral-900/50
         transition-all duration-150
         ${STATUS_BORDER_COLORS[ticket.status]}
         ${isDragging ? 'opacity-50 shadow-xl scale-105' : ''}
       `}
     >
-      <h4 className="font-medium text-neutral-100 line-clamp-2">{ticket.title}</h4>
+      <h4 className="font-medium text-gray-900 dark:text-neutral-100 line-clamp-2">{ticket.title}</h4>
       {ticket.description && (
-        <p className="mt-1 text-sm text-neutral-400 line-clamp-2">{ticket.description}</p>
+        <p className="mt-1 text-sm text-gray-600 dark:text-neutral-400 line-clamp-2">{ticket.description}</p>
       )}
     </div>
   );
