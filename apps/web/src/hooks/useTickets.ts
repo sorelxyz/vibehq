@@ -21,7 +21,7 @@ export function useCreateTicket() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateTicketInput) => api.post<Ticket>('/tickets', data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'], refetchType: 'active' }),
   });
 }
 
@@ -30,7 +30,7 @@ export function useUpdateTicket() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateTicketInput }) =>
       api.patch<Ticket>(`/tickets/${id}`, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'], refetchType: 'active' }),
   });
 }
 
@@ -38,7 +38,7 @@ export function useDeleteTicket() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/tickets/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'], refetchType: 'active' }),
   });
 }
 
@@ -47,7 +47,7 @@ export function useUpdateTicketStatus() {
   return useMutation({
     mutationFn: ({ id, status, position }: { id: string; status: TicketStatus; position: number }) =>
       api.patch<Ticket>(`/tickets/${id}/status`, { status, position }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'], refetchType: 'active' }),
   });
 }
 
@@ -56,7 +56,7 @@ export function useReorderTickets() {
   return useMutation({
     mutationFn: (updates: Array<{ id: string; status: TicketStatus; position: number }>) =>
       api.post('/tickets/reorder', { updates }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tickets'], refetchType: 'active' }),
   });
 }
 
@@ -81,7 +81,7 @@ export function useGeneratePRD() {
       return res.json() as Promise<Ticket>;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'], refetchType: 'active' });
     },
   });
 }
@@ -98,7 +98,7 @@ export function useApprovePRD() {
       return res.json() as Promise<Ticket>;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'], refetchType: 'active' });
     },
   });
 }
@@ -143,6 +143,55 @@ export function useCleanupAll() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ralph-instance'] });
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
+  });
+}
+
+interface DevServerStatus {
+  running: boolean;
+  port: number | null;
+  url: string | null;
+}
+
+export function useDevServerStatus(instanceId: string | undefined) {
+  return useQuery({
+    queryKey: ['dev-server', instanceId],
+    queryFn: () => api.get<DevServerStatus>(`/ralph/${instanceId}/dev-server`),
+    enabled: !!instanceId,
+    refetchInterval: 5000, // Poll every 5 seconds
+  });
+}
+
+export function useStartDevServer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (instanceId: string) => {
+      const res = await fetch(`/api/ralph/${instanceId}/dev-server`, { method: 'POST' });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to start dev server');
+      }
+      return res.json() as Promise<{ port: number | null; url: string | null }>;
+    },
+    onSuccess: (_, instanceId) => {
+      queryClient.invalidateQueries({ queryKey: ['dev-server', instanceId] });
+    },
+  });
+}
+
+export function useStopDevServer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (instanceId: string) => {
+      const res = await fetch(`/api/ralph/${instanceId}/dev-server`, { method: 'DELETE' });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to stop dev server');
+      }
+      return res.json();
+    },
+    onSuccess: (_, instanceId) => {
+      queryClient.invalidateQueries({ queryKey: ['dev-server', instanceId] });
     },
   });
 }

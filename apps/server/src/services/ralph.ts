@@ -1,9 +1,10 @@
 import { db, ralphInstances } from '../db';
 import { eq, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { mkdir, writeFile } from 'fs/promises';
+import { mkdir, writeFile, appendFile } from 'fs/promises';
 import { exec } from '../utils/shell';
 import * as worktreeService from './worktree';
+import { broadcastLog } from '../websocket';
 import type { RalphInstance, Ticket, Project, RalphStatus } from '@vibehq/shared';
 import type { Subprocess } from 'bun';
 
@@ -47,11 +48,13 @@ export async function createRalphInstance(
   const scriptPath = `${instanceDir}/run-ralph.sh`;
   const logPath = `${instanceDir}/ralph.log`;
 
+  // Note: We don't use tee anymore - stdout is captured directly by the server
+  // and streamed to WebSocket clients in real-time while also being written to the log file
   const scriptContent = `#!/bin/bash
 set -e
 cd "${worktreePath}"
 
-# Run RALPH using Claude Code
+# Run RALPH using Claude Code (stdout captured by server for real-time streaming)
 claude --dangerously-skip-permissions --print "You are RALPH, an autonomous coding agent.
 
 Read the PRD at ${prdFilePath} to understand what needs to be built.
@@ -66,7 +69,7 @@ Your task:
 
 If all items in the PRD are complete, output: RALPH_COMPLETE
 
-Work autonomously. Make decisions. Ship code." 2>&1 | tee -a "${logPath}"
+Work autonomously. Make decisions. Ship code." 2>&1
 `;
 
   await writeFile(scriptPath, scriptContent);
@@ -98,6 +101,11 @@ export async function startRalphInstance(instanceId: string): Promise<void> {
   if (instance.status === 'running') throw new Error('Instance already running');
   if (!instance.scriptPath) throw new Error('No script path');
 
+  const logPath = instance.logPath!;
+
+  // Clear log file at start
+  await writeFile(logPath, '');
+
   // Spawn the RALPH process
   const proc = Bun.spawn(['bash', instance.scriptPath], {
     cwd: instance.worktreePath!,
@@ -108,6 +116,10 @@ export async function startRalphInstance(instanceId: string): Promise<void> {
   // Store process reference
   runningProcesses.set(instanceId, proc);
 
+  // Stream stdout to log file and WebSocket in real-time
+  streamOutput(instanceId, proc.stdout, logPath);
+  streamOutput(instanceId, proc.stderr, logPath);
+
   // Update database with PID and status
   await db.update(ralphInstances)
     .set({
@@ -116,6 +128,37 @@ export async function startRalphInstance(instanceId: string): Promise<void> {
       startedAt: new Date(),
     })
     .where(eq(ralphInstances.id, instanceId));
+}
+
+/**
+ * Stream output from a readable stream to log file and WebSocket
+ */
+async function streamOutput(
+  instanceId: string,
+  stream: ReadableStream<Uint8Array>,
+  logPath: string
+): Promise<void> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const text = decoder.decode(value, { stream: true });
+
+      // Write to log file for persistence
+      await appendFile(logPath, text);
+
+      // Broadcast to WebSocket subscribers in real-time
+      broadcastLog(instanceId, text);
+    }
+  } catch (error) {
+    console.error('Error streaming output:', error);
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 /**

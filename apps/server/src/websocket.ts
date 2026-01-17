@@ -146,3 +146,16 @@ export function broadcastStatus(instanceId: string, status: string) {
     }
   }
 }
+
+/**
+ * Broadcast log data directly to all subscribers (for real-time streaming)
+ */
+export function broadcastLog(instanceId: string, data: string) {
+  const subs = subscriptions.get(instanceId);
+  if (subs && subs.size > 0) {
+    const message = JSON.stringify({ type: 'log', instanceId, data });
+    for (const ws of subs) {
+      ws.send(message);
+    }
+  }
+}

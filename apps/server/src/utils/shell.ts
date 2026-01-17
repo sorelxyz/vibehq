@@ -15,22 +15,32 @@ export async function exec(
   });
 
   const timeoutMs = options?.timeout || 60000;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
-      proc.kill();
-      reject(new Error(`Command timed out after ${timeoutMs}ms`));
-    }, timeoutMs);
-  });
+  let timedOut = false;
 
-  const [stdout, stderr] = await Promise.race([
-    Promise.all([
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    proc.kill();
+  }, timeoutMs);
+
+  try {
+    const [stdout, stderr, exitCode] = await Promise.all([
       new Response(proc.stdout).text(),
       new Response(proc.stderr).text(),
-    ]),
-    timeoutPromise,
-  ]);
+      proc.exited,
+    ]);
 
-  const exitCode = await proc.exited;
+    clearTimeout(timeoutId);
 
-  return { stdout, stderr, exitCode };
+    if (timedOut) {
+      throw new Error(`Command timed out after ${timeoutMs}ms`);
+    }
+
+    return { stdout, stderr, exitCode };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (timedOut) {
+      throw new Error(`Command timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  }
 }

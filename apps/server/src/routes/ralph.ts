@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import * as ralphService from '../services/ralph';
 import * as ticketsService from '../services/tickets';
 import * as projectsService from '../services/projects';
+import * as devServerService from '../services/dev-server';
 import { readFile } from 'fs/promises';
 
 const app = new Hono();
@@ -116,6 +117,37 @@ app.post('/:id/cleanup-all', async (c) => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: `Cleanup failed: ${message}` }, 500);
   }
+});
+
+// POST /api/ralph/:id/dev-server - Start dev server for testing
+app.post('/:id/dev-server', async (c) => {
+  const instanceId = c.req.param('id');
+
+  try {
+    const instance = await ralphService.getRalphInstance(instanceId);
+    if (!instance) return c.json({ error: 'Instance not found' }, 404);
+    if (!instance.worktreePath) return c.json({ error: 'No worktree path' }, 400);
+
+    const result = await devServerService.startDevServer(instanceId, instance.worktreePath);
+    return c.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json({ error: message }, 500);
+  }
+});
+
+// DELETE /api/ralph/:id/dev-server - Stop dev server
+app.delete('/:id/dev-server', async (c) => {
+  const instanceId = c.req.param('id');
+  devServerService.stopDevServer(instanceId);
+  return c.json({ success: true });
+});
+
+// GET /api/ralph/:id/dev-server - Get dev server status
+app.get('/:id/dev-server', async (c) => {
+  const instanceId = c.req.param('id');
+  const status = devServerService.getDevServerStatus(instanceId);
+  return c.json(status);
 });
 
 export default app;
