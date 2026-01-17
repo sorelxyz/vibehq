@@ -6,6 +6,7 @@ export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(), // nanoid
   name: text('name').notNull(),
   path: text('path').notNull(), // Local filesystem path to codebase
+  color: text('color').notNull().default('#3b82f6'), // Project color (default blue)
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 

@@ -5,11 +5,34 @@ export type TicketStatus = typeof TICKET_STATUSES[number];
 export const RALPH_STATUSES = ['pending', 'running', 'completed', 'failed'] as const;
 export type RalphStatus = typeof RALPH_STATUSES[number];
 
+// Project colors
+export const PROJECT_COLORS = [
+  '#ef4444', // red
+  '#f97316', // orange
+  '#f59e0b', // amber
+  '#eab308', // yellow
+  '#84cc16', // lime
+  '#22c55e', // green
+  '#14b8a6', // teal
+  '#06b6d4', // cyan
+  '#0ea5e9', // sky
+  '#3b82f6', // blue
+  '#6366f1', // indigo
+  '#8b5cf6', // violet
+  '#a855f7', // purple
+  '#d946ef', // fuchsia
+  '#ec4899', // pink
+  '#64748b', // slate
+] as const;
+
+export type ProjectColor = typeof PROJECT_COLORS[number];
+
 // Entity types
 export interface Project {
   id: string;
   name: string;
   path: string;
+  color: string;
   createdAt: Date;
 }
 
@@ -57,15 +80,23 @@ export interface WorktreeInfo {
   head: string;
 }
 
+export interface FileChange {
+  path: string;
+  status: 'added' | 'modified' | 'deleted' | 'renamed';
+  oldPath?: string; // For renamed files
+}
+
 // API types
 export interface CreateProjectInput {
   name: string;
   path: string;
+  color?: string;
 }
 
 export interface UpdateProjectInput {
   name?: string;
   path?: string;
+  color?: string;
 }
 
 export interface CreateTicketInput {

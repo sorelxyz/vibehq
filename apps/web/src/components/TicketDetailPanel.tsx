@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Ticket, TicketStatus, Project } from '@vibehq/shared';
 import { TICKET_STATUSES } from '@vibehq/shared';
-import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD, useRalphInstance, useCleanupWorktree, useCleanupAll, useDevServerStatus, useStartDevServer, useStopDevServer, usePrdGenerationStatus } from '../hooks/useTickets';
+import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD, useRalphInstance, useCleanupWorktree, useCleanupAll, useDevServerStatus, useStartDevServer, useStopDevServer, usePrdGenerationStatus, useFileChanges } from '../hooks/useTickets';
 import { useImages, useUploadImage, useDeleteImage } from '../hooks/useImages';
 import { useRalphLogs } from '../hooks/useRalphLogs';
 import ConfirmDialog from './ConfirmDialog';
@@ -70,6 +70,11 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
   );
   const startDevServer = useStartDevServer();
   const stopDevServer = useStopDevServer();
+
+  // File changes for in_testing
+  const { data: fileChanges = [], isLoading: isLoadingChanges } = useFileChanges(
+    ticket?.status === 'in_testing' ? ticket?.id : undefined
+  );
 
   // WebSocket logs for running RALPH instances
   const { logs, status: ralphStatus, isConnected, error: logsError } = useRalphLogs(
@@ -519,6 +524,72 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                     <code className="text-sm bg-gray-200 dark:bg-neutral-800 px-2 py-1 rounded text-gray-900 dark:text-neutral-100">{ticket.branchName}</code>
                   </div>
                 )}
+
+                {/* File Changes */}
+                <div className="border border-gray-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+                  <div className="px-3 py-2 bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700">
+                    <span className="text-sm font-medium text-gray-700 dark:text-neutral-300">
+                      Changed Files {!isLoadingChanges && `(${fileChanges.length})`}
+                    </span>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {isLoadingChanges ? (
+                      <div className="px-3 py-4 text-center text-gray-500 dark:text-neutral-500 text-sm">
+                        Loading changes...
+                      </div>
+                    ) : fileChanges.length === 0 ? (
+                      <div className="px-3 py-4 text-center text-gray-500 dark:text-neutral-500 text-sm">
+                        No file changes detected
+                      </div>
+                    ) : (
+                      <ul className="divide-y divide-gray-100 dark:divide-neutral-800">
+                        {fileChanges.map((change, index) => (
+                          <li key={index} className="px-3 py-2 flex items-center gap-2 text-sm">
+                            {change.status === 'added' && (
+                              <span className="w-5 h-5 flex items-center justify-center text-green-600 dark:text-green-400" title="Added">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                              </span>
+                            )}
+                            {change.status === 'modified' && (
+                              <span className="w-5 h-5 flex items-center justify-center text-yellow-600 dark:text-yellow-400" title="Modified">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </span>
+                            )}
+                            {change.status === 'deleted' && (
+                              <span className="w-5 h-5 flex items-center justify-center text-red-600 dark:text-red-400" title="Deleted">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                </svg>
+                              </span>
+                            )}
+                            {change.status === 'renamed' && (
+                              <span className="w-5 h-5 flex items-center justify-center text-blue-600 dark:text-blue-400" title="Renamed">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
+                              </span>
+                            )}
+                            <span className="font-mono text-gray-700 dark:text-neutral-300 truncate" title={change.path}>
+                              {change.status === 'renamed' && change.oldPath ? (
+                                <>
+                                  <span className="text-gray-400 dark:text-neutral-500">{change.oldPath}</span>
+                                  <span className="mx-1 text-gray-400 dark:text-neutral-500">&rarr;</span>
+                                  {change.path}
+                                </>
+                              ) : (
+                                change.path
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
 
                 {/* Test Changes Button */}
                 {ralphInstance && (

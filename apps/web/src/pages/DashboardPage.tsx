@@ -90,6 +90,7 @@ export default function DashboardPage() {
       ) : (
         <KanbanBoard
           tickets={tickets || []}
+          projects={projects || []}
           onTicketClick={handleTicketClick}
         />
       )}

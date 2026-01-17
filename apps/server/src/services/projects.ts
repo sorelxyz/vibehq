@@ -18,6 +18,7 @@ export async function createProject(data: CreateProjectInput): Promise<Project> 
     id: nanoid(),
     name: data.name,
     path: data.path,
+    ...(data.color && { color: data.color }),
   }).returning();
   return mapToProject(row);
 }
@@ -27,6 +28,7 @@ export async function updateProject(id: string, data: UpdateProjectInput): Promi
     .set({
       ...(data.name !== undefined && { name: data.name }),
       ...(data.path !== undefined && { path: data.path }),
+      ...(data.color !== undefined && { color: data.color }),
     })
     .where(eq(projects.id, id))
     .returning();
@@ -46,6 +48,7 @@ function mapToProject(row: typeof projects.$inferSelect): Project {
     id: row.id,
     name: row.name,
     path: row.path,
+    color: row.color,
     createdAt: row.createdAt,
   };
 }

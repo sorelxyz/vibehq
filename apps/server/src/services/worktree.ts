@@ -1,6 +1,6 @@
 import { exec } from '../utils/shell';
 import { mkdir, rm } from 'fs/promises';
-import type { WorktreeInfo } from '@vibehq/shared';
+import type { WorktreeInfo, FileChange } from '@vibehq/shared';
 
 /**
  * Create a git worktree with a new branch for a ticket
@@ -135,4 +135,51 @@ export async function getMainBranch(projectPath: string): Promise<string> {
     { cwd: projectPath }
   );
   return stdout.trim();
+}
+
+/**
+ * Get the list of changed files between a branch and main
+ */
+export async function getFileChanges(
+  projectPath: string,
+  branchName: string
+): Promise<FileChange[]> {
+  const mainBranch = await getMainBranch(projectPath);
+
+  // Use git diff with --name-status to get file status
+  // Format: M\tfilename (Modified), A\tfilename (Added), D\tfilename (Deleted), R###\told\tnew (Renamed)
+  const { stdout, exitCode } = await exec(
+    `git diff --name-status ${mainBranch}...${branchName}`,
+    { cwd: projectPath }
+  );
+
+  if (exitCode !== 0 || !stdout.trim()) {
+    return [];
+  }
+
+  const changes: FileChange[] = [];
+
+  for (const line of stdout.trim().split('\n')) {
+    if (!line) continue;
+
+    const parts = line.split('\t');
+    const statusCode = parts[0];
+
+    if (statusCode.startsWith('R')) {
+      // Renamed file: R###\told\tnew
+      changes.push({
+        path: parts[2],
+        status: 'renamed',
+        oldPath: parts[1],
+      });
+    } else if (statusCode === 'A') {
+      changes.push({ path: parts[1], status: 'added' });
+    } else if (statusCode === 'M') {
+      changes.push({ path: parts[1], status: 'modified' });
+    } else if (statusCode === 'D') {
+      changes.push({ path: parts[1], status: 'deleted' });
+    }
+  }
+
+  return changes;
 }

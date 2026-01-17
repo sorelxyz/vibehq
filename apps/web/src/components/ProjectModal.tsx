@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import type { Project } from '@vibehq/shared';
+import { PROJECT_COLORS } from '@vibehq/shared';
 
 interface ProjectModalProps {
   project?: Project;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { name: string; path: string }) => void;
+  onSave: (data: { name: string; path: string; color: string }) => void;
   isLoading?: boolean;
 }
 
 export default function ProjectModal({ project, isOpen, onClose, onSave, isLoading }: ProjectModalProps) {
   const [name, setName] = useState('');
   const [path, setPath] = useState('');
+  const [color, setColor] = useState<string>(PROJECT_COLORS[9]); // Default blue
   const [error, setError] = useState('');
   const [isBrowsing, setIsBrowsing] = useState(false);
 
@@ -52,9 +54,11 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
     if (project) {
       setName(project.name);
       setPath(project.path);
+      setColor(project.color || PROJECT_COLORS[9]);
     } else {
       setName('');
       setPath('');
+      setColor(PROJECT_COLORS[9]);
     }
     setError('');
   }, [project, isOpen]);
@@ -67,7 +71,7 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
       setError('Name and path are required');
       return;
     }
-    onSave({ name: name.trim(), path: path.trim() });
+    onSave({ name: name.trim(), path: path.trim(), color });
   };
 
   return (
@@ -123,6 +127,27 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
                     </svg>
                   )}
                 </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                Color
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {PROJECT_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setColor(c)}
+                    className={`w-7 h-7 rounded-full transition-all ${
+                      color === c
+                        ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-neutral-900 ring-gray-900 dark:ring-white scale-110'
+                        : 'hover:scale-110'
+                    }`}
+                    style={{ backgroundColor: c }}
+                    title={c}
+                  />
+                ))}
               </div>
             </div>
             {error && (

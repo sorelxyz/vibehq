@@ -12,17 +12,18 @@ import {
   type DragOverEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { TICKET_STATUSES, type Ticket, type TicketStatus } from '@vibehq/shared';
+import { TICKET_STATUSES, type Ticket, type TicketStatus, type Project } from '@vibehq/shared';
 import KanbanColumn from './KanbanColumn';
 import TicketCard from './TicketCard';
 import { useUpdateTicketStatus, useReorderTickets } from '../hooks/useTickets';
 
 interface KanbanBoardProps {
   tickets: Ticket[];
+  projects: Project[];
   onTicketClick: (ticket: Ticket) => void;
 }
 
-export default function KanbanBoard({ tickets, onTicketClick }: KanbanBoardProps) {
+export default function KanbanBoard({ tickets, projects, onTicketClick }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const updateStatus = useUpdateTicketStatus();
   const reorderTickets = useReorderTickets();
@@ -130,13 +131,25 @@ export default function KanbanBoard({ tickets, onTicketClick }: KanbanBoardProps
             key={status}
             status={status}
             tickets={getTicketsByStatus(status)}
+            projects={projects}
             onTicketClick={onTicketClick}
           />
         ))}
       </div>
       <DragOverlay>
         {activeTicket ? (
-          <TicketCard ticket={activeTicket} onClick={() => {}} isDragging />
+          (() => {
+            const project = projects.find(p => p.id === activeTicket.projectId);
+            return (
+              <TicketCard
+                ticket={activeTicket}
+                onClick={() => {}}
+                isDragging
+                projectName={project?.name}
+                projectColor={project?.color}
+              />
+            );
+          })()
         ) : null}
       </DragOverlay>
     </DndContext>

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { Ticket, CreateTicketInput, UpdateTicketInput, TicketStatus, RalphInstance } from '@vibehq/shared';
+import type { Ticket, CreateTicketInput, UpdateTicketInput, TicketStatus, RalphInstance, FileChange } from '@vibehq/shared';
 
 export function useTickets(projectId?: string) {
   return useQuery({
@@ -198,8 +198,17 @@ export function useStartDevServer() {
     mutationFn: async (instanceId: string) => {
       const res = await fetch(`/api/ralph/${instanceId}/dev-server`, { method: 'POST' });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to start dev server');
+        const text = await res.text();
+        let message = 'Failed to start dev server';
+        if (text) {
+          try {
+            const error = JSON.parse(text);
+            message = error.error || message;
+          } catch {
+            message = text || message;
+          }
+        }
+        throw new Error(message);
       }
       return res.json() as Promise<{ port: number | null; url: string | null }>;
     },
@@ -223,5 +232,14 @@ export function useStopDevServer() {
     onSuccess: (_, instanceId) => {
       queryClient.invalidateQueries({ queryKey: ['dev-server', instanceId] });
     },
+  });
+}
+
+export function useFileChanges(ticketId: string | undefined) {
+  return useQuery({
+    queryKey: ['file-changes', ticketId],
+    queryFn: () => api.get<{ changes: FileChange[] }>(`/tickets/${ticketId}/changes`),
+    enabled: !!ticketId,
+    select: (data) => data.changes,
   });
 }

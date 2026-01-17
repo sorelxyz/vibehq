@@ -32,6 +32,14 @@ export async function createRalphInstance(
     ticket.title
   );
 
+  // Install dependencies in worktree (so "Test Changes" works later)
+  try {
+    await exec(`cd "${worktreePath}" && bun install`);
+  } catch (error) {
+    // Non-fatal: project might not have package.json or use different package manager
+    console.log('Note: bun install skipped or failed in worktree:', error);
+  }
+
   // Create instance directory inside worktree
   const instanceDir = `${worktreePath}/.ralph-instance`;
   await mkdir(instanceDir, { recursive: true });

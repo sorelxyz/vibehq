@@ -4,6 +4,7 @@ import * as projectsService from '../services/projects';
 import * as imagesService from '../services/images';
 import * as prdGeneration from '../services/prd-generation';
 import * as ralphService from '../services/ralph';
+import * as worktreeService from '../services/worktree';
 import { TICKET_STATUSES } from '@vibehq/shared';
 
 const app = new Hono();
@@ -159,6 +160,26 @@ app.post('/:id/approve', async (c) => {
     console.error('Failed to launch RALPH:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: `Failed to launch RALPH: ${message}` }, 500);
+  }
+});
+
+// GET /api/tickets/:id/changes - Get file changes for a ticket
+app.get('/:id/changes', async (c) => {
+  const ticketId = c.req.param('id');
+  const ticket = await ticketsService.getTicket(ticketId);
+
+  if (!ticket) return c.json({ error: 'Ticket not found' }, 404);
+  if (!ticket.branchName) return c.json({ changes: [] });
+
+  const project = await projectsService.getProject(ticket.projectId);
+  if (!project) return c.json({ error: 'Project not found' }, 404);
+
+  try {
+    const changes = await worktreeService.getFileChanges(project.path, ticket.branchName);
+    return c.json({ changes });
+  } catch (error) {
+    console.error('Failed to get file changes:', error);
+    return c.json({ changes: [] });
   }
 });
 
