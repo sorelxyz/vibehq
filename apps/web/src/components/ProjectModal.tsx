@@ -13,6 +13,40 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
   const [name, setName] = useState('');
   const [path, setPath] = useState('');
   const [error, setError] = useState('');
+  const [isBrowsing, setIsBrowsing] = useState(false);
+
+  const handleBrowse = async () => {
+    if (isBrowsing) return;
+
+    setIsBrowsing(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/projects/pick-folder', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to open folder picker');
+        return;
+      }
+
+      if (data.cancelled) {
+        // User cancelled, do nothing
+        return;
+      }
+
+      if (data.path) {
+        setPath(data.path);
+      }
+    } catch {
+      setError('Failed to open folder picker');
+    } finally {
+      setIsBrowsing(false);
+    }
+  };
 
   useEffect(() => {
     if (project) {
@@ -63,14 +97,33 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
               <label htmlFor="path" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
                 Path
               </label>
-              <input
-                id="path"
-                type="text"
-                value={path}
-                onChange={(e) => setPath(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="/path/to/your/project"
-              />
+              <div className="flex">
+                <input
+                  id="path"
+                  type="text"
+                  value={path}
+                  onChange={(e) => setPath(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-l-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="/path/to/your/project"
+                />
+                <button
+                  type="button"
+                  onClick={handleBrowse}
+                  disabled={isBrowsing}
+                  className="px-3 py-2 bg-gray-200 dark:bg-neutral-700 border border-l-0 border-gray-300 dark:border-neutral-700 rounded-r-lg text-gray-700 dark:text-neutral-300 hover:bg-gray-300 dark:hover:bg-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isBrowsing ? (
+                    <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
             {error && (
               <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>
