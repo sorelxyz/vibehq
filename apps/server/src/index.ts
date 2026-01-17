@@ -50,10 +50,27 @@ app.route('/', staticRoutes);
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
-export default {
+// Custom fetch handler that upgrades WebSocket connections
+const server = {
   port: 3001,
-  fetch: app.fetch,
+  fetch(req: Request, server: { upgrade: (req: Request) => boolean }) {
+    const url = new URL(req.url);
+
+    // Handle WebSocket upgrade for /ws path
+    if (url.pathname === '/ws' && req.headers.get('upgrade') === 'websocket') {
+      const success = server.upgrade(req);
+      if (success) {
+        return undefined; // Bun handles the response
+      }
+      return new Response('WebSocket upgrade failed', { status: 500 });
+    }
+
+    // Pass all other requests to Hono
+    return app.fetch(req);
+  },
   websocket: websocketHandler,
 };
+
+export default server;
 
 console.log('Server running on http://localhost:3001');

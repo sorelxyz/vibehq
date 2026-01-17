@@ -151,6 +151,12 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
     }
   };
 
+  const handleOpenInCursor = () => {
+    if (ralphInstance?.worktreePath) {
+      window.open(`cursor://file${ralphInstance.worktreePath}`, '_blank');
+    }
+  };
+
   return (
     <>
       <div
@@ -417,11 +423,20 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-neutral-400">RALPH Progress</span>
-                      {ticket.branchName && (
-                        <code className="text-xs bg-neutral-800 px-2 py-1 rounded text-neutral-300">
-                          {ticket.branchName}
-                        </code>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {ticket.branchName && (
+                          <code className="text-xs bg-neutral-800 px-2 py-1 rounded text-neutral-300">
+                            {ticket.branchName}
+                          </code>
+                        )}
+                        <button
+                          onClick={handleOpenInCursor}
+                          className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                          title="Open worktree in Cursor"
+                        >
+                          Open in Cursor
+                        </button>
+                      </div>
                     </div>
                     <div className="h-64 border border-neutral-700 rounded-lg overflow-hidden">
                       <RalphLogViewer
@@ -450,9 +465,20 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
               <div className="space-y-4">
                 {/* Branch info */}
                 {ticket.branchName && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-neutral-400">Branch:</span>
-                    <code className="text-sm bg-neutral-800 px-2 py-1 rounded">{ticket.branchName}</code>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-neutral-400">Branch:</span>
+                      <code className="text-sm bg-neutral-800 px-2 py-1 rounded">{ticket.branchName}</code>
+                    </div>
+                    {ralphInstance?.worktreePath && (
+                      <button
+                        onClick={handleOpenInCursor}
+                        className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                        title="Open worktree in Cursor"
+                      >
+                        Open in Cursor
+                      </button>
+                    )}
                   </div>
                 )}
 

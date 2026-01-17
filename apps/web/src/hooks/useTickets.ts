@@ -66,8 +66,17 @@ export function useGeneratePRD() {
     mutationFn: async (ticketId: string) => {
       const res = await fetch(`/api/tickets/${ticketId}/generate-prd`, { method: 'POST' });
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to generate PRD');
+        // Handle empty response body gracefully
+        const text = await res.text();
+        if (text) {
+          try {
+            const error = JSON.parse(text);
+            throw new Error(error.error || 'Failed to generate PRD');
+          } catch {
+            throw new Error(text || 'Failed to generate PRD');
+          }
+        }
+        throw new Error(`Failed to generate PRD (${res.status})`);
       }
       return res.json() as Promise<Ticket>;
     },
