@@ -4,37 +4,54 @@ import { nanoid } from 'nanoid';
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID!;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET!;
 const GITHUB_ALLOWED_USERS = (process.env.GITHUB_ALLOWED_USERS || '').split(',').map(u => u.trim().toLowerCase());
+const JWT_SECRET = process.env.JWT_SECRET || 'vibehq-secret-change-me';
 
-// Simple in-memory session store (tokens are short-lived anyway)
-const sessions = new Map<string, { username: string; expiresAt: number }>();
-
-// Clean expired sessions periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [token, session] of sessions) {
-    if (session.expiresAt < now) {
-      sessions.delete(token);
-    }
-  }
-}, 60000);
-
-export function validateSession(token: string): boolean {
-  const session = sessions.get(token);
-  if (!session) return false;
-  if (session.expiresAt < Date.now()) {
-    sessions.delete(token);
-    return false;
-  }
-  return true;
+// Simple JWT implementation (no external deps)
+function base64url(str: string): string {
+  return Buffer.from(str).toString('base64url');
 }
 
-export function createSession(username: string): string {
-  const token = nanoid(32);
-  sessions.set(token, {
-    username,
-    expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
-  });
-  return token;
+function createJWT(payload: object, expiresInDays = 30): string {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const now = Math.floor(Date.now() / 1000);
+  const fullPayload = { ...payload, iat: now, exp: now + expiresInDays * 24 * 60 * 60 };
+  
+  const headerB64 = base64url(JSON.stringify(header));
+  const payloadB64 = base64url(JSON.stringify(fullPayload));
+  const data = `${headerB64}.${payloadB64}`;
+  
+  const hmac = new Bun.CryptoHasher('sha256', JWT_SECRET);
+  hmac.update(data);
+  const signature = hmac.digest('base64url');
+  
+  return `${data}.${signature}`;
+}
+
+function verifyJWT(token: string): { valid: boolean; payload?: any } {
+  try {
+    const [headerB64, payloadB64, signature] = token.split('.');
+    if (!headerB64 || !payloadB64 || !signature) return { valid: false };
+    
+    const data = `${headerB64}.${payloadB64}`;
+    const hmac = new Bun.CryptoHasher('sha256', JWT_SECRET);
+    hmac.update(data);
+    const expectedSig = hmac.digest('base64url');
+    
+    if (signature !== expectedSig) return { valid: false };
+    
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString());
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      return { valid: false };
+    }
+    
+    return { valid: true, payload };
+  } catch {
+    return { valid: false };
+  }
+}
+
+export function validateSession(token: string): boolean {
+  return verifyJWT(token).valid;
 }
 
 const app = new Hono();
@@ -45,7 +62,6 @@ app.get('/github', (c) => {
   const redirectUri = `${backendUrl}/api/auth/github/callback`;
   const state = nanoid(16);
   
-  // Store state for CSRF protection (in production, use a proper store)
   c.header('Set-Cookie', `oauth_state=${state}; HttpOnly; Path=/; Max-Age=600; SameSite=Lax`);
   
   const params = new URLSearchParams({
@@ -61,7 +77,6 @@ app.get('/github', (c) => {
 // GitHub OAuth callback
 app.get('/github/callback', async (c) => {
   const code = c.req.query('code');
-  const state = c.req.query('state');
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   
   if (!code) {
@@ -69,7 +84,6 @@ app.get('/github/callback', async (c) => {
   }
   
   try {
-    // Exchange code for access token
     const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
       headers: {
@@ -90,7 +104,6 @@ app.get('/github/callback', async (c) => {
       return c.redirect(`${frontendUrl}/login?error=token_failed`);
     }
     
-    // Get user info
     const userRes = await fetch('https://api.github.com/user', {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`,
@@ -105,17 +118,15 @@ app.get('/github/callback', async (c) => {
       return c.redirect(`${frontendUrl}/login?error=no_user`);
     }
     
-    // Check if user is allowed
     if (GITHUB_ALLOWED_USERS.length > 0 && !GITHUB_ALLOWED_USERS.includes(username)) {
       console.log(`Denied access for GitHub user: ${username}`);
       return c.redirect(`${frontendUrl}/login?error=not_allowed`);
     }
     
-    // Create session
-    const sessionToken = createSession(username);
+    // Create JWT token
+    const jwt = createJWT({ sub: username, type: 'github' });
     
-    // Redirect to frontend with token
-    return c.redirect(`${frontendUrl}/auth/callback?token=${sessionToken}`);
+    return c.redirect(`${frontendUrl}/auth/callback?token=${jwt}`);
     
   } catch (error) {
     console.error('GitHub OAuth error:', error);
@@ -131,8 +142,8 @@ app.get('/verify', (c) => {
   }
   
   const token = auth.slice(7);
-  const valid = validateSession(token);
-  return c.json({ valid });
+  const result = verifyJWT(token);
+  return c.json({ valid: result.valid, user: result.payload?.sub });
 });
 
 export default app;
