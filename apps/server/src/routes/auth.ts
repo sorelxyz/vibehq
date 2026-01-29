@@ -41,7 +41,8 @@ const app = new Hono();
 
 // Start GitHub OAuth flow
 app.get('/github', (c) => {
-  const redirectUri = new URL('/api/auth/github/callback', c.req.url).toString();
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+  const redirectUri = `${backendUrl}/api/auth/github/callback`;
   const state = nanoid(16);
   
   // Store state for CSRF protection (in production, use a proper store)
