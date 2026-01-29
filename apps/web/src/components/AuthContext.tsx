@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { config } from '../lib/config';
+import { getToken, setToken, clearToken, getAuthHeaders } from '../lib/auth';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -15,36 +17,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check if already authenticated on mount
   useEffect(() => {
-    fetch('/api/projects', { credentials: 'include' })
-      .then((res) => {
-        setIsAuthenticated(res.ok);
-        setIsLoading(false);
+    const stored = getToken();
+    if (stored) {
+      // Verify token still works
+      fetch(`${config.apiBase}/projects`, {
+        headers: getAuthHeaders(),
       })
-      .catch(() => {
-        setIsAuthenticated(false);
-        setIsLoading(false);
-      });
+        .then((res) => {
+          if (res.ok) {
+            setIsAuthenticated(true);
+          } else {
+            clearToken();
+          }
+          setIsLoading(false);
+        })
+        .catch(() => {
+          clearToken();
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const login = async (password: string): Promise<boolean> => {
     try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-        credentials: 'include',
+      // Test if password works by making an authenticated request
+      const res = await fetch(`${config.apiBase}/projects`, {
+        headers: { 'Authorization': `Bearer ${password}` },
       });
-      const success = res.ok;
-      setIsAuthenticated(success);
-      return success;
+      
+      if (res.ok) {
+        setToken(password);
+        setIsAuthenticated(true);
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }
   };
 
   const logout = () => {
-    // Clear cookie by setting it expired
-    document.cookie = 'vibehq_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    clearToken();
     setIsAuthenticated(false);
   };
 

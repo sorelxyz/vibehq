@@ -1,18 +1,20 @@
 import { config } from './config';
+import { getAuthHeaders, clearToken } from './auth';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const url = path.startsWith('/') ? `${config.apiBase}${path}` : `${config.apiBase}/${path}`;
   
   const response = await fetch(url, {
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
       ...options?.headers,
     },
     ...options,
   });
 
   if (response.status === 401) {
+    clearToken();
     window.location.reload();
     throw new Error('Unauthorized');
   }
