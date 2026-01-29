@@ -4,12 +4,13 @@ import projectsRoutes from './routes/projects';
 import ticketsRoutes from './routes/tickets';
 import imagesRoutes from './routes/images';
 import ralphRoutes from './routes/ralph';
+import authRoutes from './routes/auth';
 import staticRoutes from './routes/static';
 import { ensureUploadsDir } from './services/images';
 import { websocketHandler } from './websocket';
 import { startProcessMonitor, stopProcessMonitor, recoverOrphanedInstances } from './services/process-monitor';
 import { errorHandler } from './middleware/error-handler';
-import { authMiddleware, loginPostHandler } from './middleware/auth';
+import { authMiddleware } from './middleware/auth';
 
 // Ensure uploads directory exists
 ensureUploadsDir();
@@ -51,10 +52,8 @@ app.use('/api/*', cors({
 // Auth middleware for API routes
 app.use('/api/*', authMiddleware);
 
-// Login endpoint (before auth middleware takes effect due to skip in middleware)
-app.post('/api/login', loginPostHandler);
-
 // Routes
+app.route('/api/auth', authRoutes);
 app.route('/api/projects', projectsRoutes);
 app.route('/api/tickets', ticketsRoutes);
 app.route('/api/ralph', ralphRoutes);

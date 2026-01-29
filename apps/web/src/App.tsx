@@ -3,9 +3,10 @@ import Layout from './components/Layout';
 import DashboardPage from './pages/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage';
 import LoginPage from './pages/LoginPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import { AuthProvider, useAuth } from './components/AuthContext';
 
-function AuthenticatedApp() {
+function ProtectedRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -33,7 +34,11 @@ function AuthenticatedApp() {
 export default function App() {
   return (
     <AuthProvider>
-      <AuthenticatedApp />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/*" element={<ProtectedRoutes />} />
+      </Routes>
     </AuthProvider>
   );
 }
