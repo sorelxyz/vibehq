@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import type { Ticket, TicketStatus, Project } from '@vibehq/shared';
+import type { Ticket, TicketStatus, Project, Step } from '@vibehq/shared';
 import { TICKET_STATUSES } from '@vibehq/shared';
-import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD, useRalphInstance, useCleanupWorktree, useCleanupAll, useDevServerStatus, useStartDevServer, useStopDevServer, usePrdGenerationStatus, useFileChanges } from '../hooks/useTickets';
+import { useUpdateTicket, useDeleteTicket, useGeneratePRD, useApprovePRD, useRalphInstance, useCleanupWorktree, useCleanupAll, useDevServerStatus, useStartDevServer, useStopDevServer, usePrdGenerationStatus, useFileChanges, useTicketSteps } from '../hooks/useTickets';
 import { useImages, useUploadImage, useDeleteImage } from '../hooks/useImages';
 import { useRalphLogs } from '../hooks/useRalphLogs';
 import ConfirmDialog from './ConfirmDialog';
@@ -9,6 +9,34 @@ import ImageUpload from './ImageUpload';
 import PRDViewer from './PRDViewer';
 import PRDEditor from './PRDEditor';
 import RalphLogViewer from './RalphLogViewer';
+import StepsViewer from './StepsViewer';
+
+type DetailTab = 'requirements' | 'prd' | 'steps' | 'logs';
+
+interface TabButtonProps {
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}
+
+function TabButton({ active, disabled, onClick, children }: TabButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex-1 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+        active
+          ? 'border-gray-900 dark:border-neutral-100 text-gray-900 dark:text-neutral-100'
+          : disabled
+            ? 'border-transparent text-gray-300 dark:text-neutral-600 cursor-not-allowed'
+            : 'border-transparent text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-300'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 interface TicketDetailPanelProps {
   ticket: Ticket | null;
@@ -24,6 +52,41 @@ const STATUS_LABELS: Record<TicketStatus, string> = {
   in_progress: 'In Progress',
   in_testing: 'In Testing',
   completed: 'Completed',
+};
+
+const STATUS_ICONS: Record<TicketStatus, React.ReactNode> = {
+  backlog: (
+    <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+    </svg>
+  ),
+  up_next: (
+    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+    </svg>
+  ),
+  in_review: (
+    <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  ),
+  in_progress: (
+    <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  in_testing: (
+    <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+    </svg>
+  ),
+  completed: (
+    <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
 };
 
 function formatRelativeTime(date: Date): string {
@@ -46,6 +109,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState<DetailTab>('requirements');
 
   const updateTicket = useUpdateTicket();
   const deleteTicket = useDeleteTicket();
@@ -76,10 +140,16 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
     ticket?.status === 'in_testing' ? ticket?.id : undefined
   );
 
-  // WebSocket logs for running RALPH instances
-  const { logs, status: ralphStatus, isConnected, error: logsError } = useRalphLogs(
+  // WebSocket logs and steps for running RALPH instances
+  const { logs, status: ralphStatus, steps: realTimeSteps, isConnected, error: logsError } = useRalphLogs(
     ralphInstance?.id ?? null
   );
+
+  // Fetch steps from ticket (for when RALPH is not running)
+  const { data: ticketSteps = [] } = useTicketSteps(ticket?.id);
+
+  // Use real-time steps when RALPH is running, otherwise fall back to stored steps
+  const steps: Step[] = ralphInstance && realTimeSteps.length > 0 ? realTimeSteps : ticketSteps;
 
   // PRD generation status and logs
   const { data: prdGeneration } = usePrdGenerationStatus(
@@ -110,6 +180,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
     setIsEditingTitle(false);
     setIsEditingDescription(false);
     setIsEditingPRD(false);
+    setActiveTab('requirements');
   }, [ticket]);
 
   useEffect(() => {
@@ -199,26 +270,21 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
         }`}
       >
         <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-lg transition-colors text-gray-700 dark:text-neutral-300"
-              aria-label="Close panel"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="p-2 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-400/10 rounded-lg transition-colors"
-              aria-label="Delete ticket"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
+          {/* Project badge with colored dot */}
+          {project && (
+            <div className="mb-3 flex items-center gap-2">
+              <span
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: project.color }}
+              />
+              <span
+                className="text-sm font-medium"
+                style={{ color: project.color }}
+              >
+                {project.name}
+              </span>
+            </div>
+          )}
 
           {/* Title */}
           <div className="mb-4">
@@ -228,7 +294,7 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-xl font-bold text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-3xl font-medium text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveTitle();
@@ -249,51 +315,94 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
             ) : (
               <h2
                 onClick={() => setIsEditingTitle(true)}
-                className="text-xl font-bold cursor-pointer hover:text-blue-500 dark:hover:text-blue-400 transition-colors text-gray-900 dark:text-neutral-100"
+                className="text-3xl font-medium leading-snug cursor-pointer hover:text-blue-500 dark:hover:text-blue-400 transition-colors text-gray-900 dark:text-neutral-100"
               >
                 {ticket.title}
               </h2>
             )}
           </div>
 
-          {/* Project badge */}
-          {project && (
-            <div className="mb-4">
-              <span className="inline-block px-2 py-1 text-xs bg-gray-200 dark:bg-neutral-800 text-gray-700 dark:text-neutral-300 rounded">
-                {project.name}
-              </span>
-            </div>
-          )}
-
           {/* Status dropdown */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-600 dark:text-neutral-400 mb-2">Status</label>
-            <select
-              value={ticket.status}
-              onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
-              className="w-full px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div className="mb-6 flex items-center gap-2">
+            <div className="relative inline-flex items-center">
+              <span className="absolute left-3 pointer-events-none">
+                {STATUS_ICONS[ticket.status]}
+              </span>
+              <select
+                value={ticket.status}
+                onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
+                className="pl-9 pr-3 py-1.5 bg-gray-100 dark:bg-neutral-800 rounded-full text-sm text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
+              >
+                {TICKET_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {STATUS_LABELS[status]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Running indicator */}
+            {(ralphInstance || prdGenerationId) && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full text-sm text-blue-600 dark:text-blue-400">
+                <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span>Running</span>
+              </div>
+            )}
+            {/* Open worktree folder */}
+            {ralphInstance?.worktreePath && (
+              <button
+                onClick={() => {
+                  // Open folder in system file manager
+                  window.open(`file://${ralphInstance.worktreePath}`, '_blank');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-neutral-800 rounded-full text-sm text-gray-700 dark:text-neutral-300 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
+                title={ralphInstance.worktreePath}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                <span>Worktree</span>
+              </button>
+            )}
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex border-b border-gray-200 dark:border-neutral-700 mb-4">
+            <TabButton
+              active={activeTab === 'requirements'}
+              onClick={() => setActiveTab('requirements')}
             >
-              {TICKET_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {STATUS_LABELS[status]}
-                </option>
-              ))}
-            </select>
+              Requirements
+            </TabButton>
+            <TabButton
+              active={activeTab === 'prd'}
+              onClick={() => setActiveTab('prd')}
+              disabled={!ticket.prdContent}
+            >
+              PRD
+            </TabButton>
+            <TabButton
+              active={activeTab === 'steps'}
+              onClick={() => setActiveTab('steps')}
+              disabled={!ticket.stepsContent}
+            >
+              Steps
+            </TabButton>
+            <TabButton
+              active={activeTab === 'logs'}
+              onClick={() => setActiveTab('logs')}
+              disabled={!ralphInstance && !prdGenerationId}
+            >
+              Logs
+            </TabButton>
           </div>
 
-          {/* Timestamps */}
-          <div className="mb-6 flex gap-6 text-sm text-gray-500 dark:text-neutral-500">
-            <div>
-              <span className="text-gray-600 dark:text-neutral-400">Created:</span>{' '}
-              {formatRelativeTime(ticket.createdAt)}
-            </div>
-            <div>
-              <span className="text-gray-600 dark:text-neutral-400">Updated:</span>{' '}
-              {formatRelativeTime(ticket.updatedAt)}
-            </div>
-          </div>
-
-          {/* Description */}
+          {/* Tab Content */}
+          {activeTab === 'requirements' && (
+            <>
+              {/* Description */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-gray-600 dark:text-neutral-400">Description</label>
@@ -351,11 +460,92 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
               isUploading={uploadImage.isPending}
             />
           </div>
+            </>
+          )}
 
-          {/* PRD Section */}
+          {/* PRD Tab Content */}
+          {activeTab === 'prd' && ticket.prdContent && (
+            <div className="mb-6">
+              {isEditingPRD ? (
+                <PRDEditor
+                  content={ticket.prdContent}
+                  onSave={handleSavePRD}
+                  onCancel={() => setIsEditingPRD(false)}
+                  isSaving={updateTicket.isPending}
+                />
+              ) : (
+                <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-96 overflow-y-auto">
+                  <PRDViewer
+                    content={ticket.prdContent}
+                    onEdit={ticket.status === 'in_review' ? () => setIsEditingPRD(true) : undefined}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Steps Tab Content */}
+          {activeTab === 'steps' && (
+            <div className="mb-6">
+              <StepsViewer steps={steps} />
+            </div>
+          )}
+
+          {/* Logs Tab Content */}
+          {activeTab === 'logs' && (
+            <div className="mb-6">
+              {/* Show RALPH logs when running */}
+              {ralphInstance && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-neutral-400">RALPH Progress</span>
+                    {ticket.branchName && (
+                      <code className="text-xs bg-gray-200 dark:bg-neutral-800 px-2 py-1 rounded text-gray-700 dark:text-neutral-300">
+                        {ticket.branchName}
+                      </code>
+                    )}
+                  </div>
+                  <div className="h-80 border border-gray-300 dark:border-neutral-700 rounded-lg overflow-hidden">
+                    <RalphLogViewer
+                      logs={logs}
+                      status={ralphStatus}
+                      isConnected={isConnected}
+                      error={logsError}
+                    />
+                  </div>
+                </div>
+              )}
+              {/* Show PRD generation logs */}
+              {prdGenerationId && !ralphInstance && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="animate-spin h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400">Generating PRD...</span>
+                  </div>
+                  <div className="h-80 border border-gray-300 dark:border-neutral-700 rounded-lg overflow-hidden">
+                    <RalphLogViewer
+                      logs={prdLogs}
+                      status={prdStatus}
+                      isConnected={prdConnected}
+                      error={prdError}
+                    />
+                  </div>
+                </div>
+              )}
+              {/* No logs available */}
+              {!ralphInstance && !prdGenerationId && (
+                <div className="p-4 text-center text-gray-500 dark:text-neutral-500">
+                  No logs available. Logs will appear when PRD generation or RALPH is running.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Status-specific Actions (always visible) */}
           <div>
-            <label className="block text-sm font-medium text-gray-600 dark:text-neutral-400 mb-2">PRD</label>
-
             {/* Backlog status - no PRD actions */}
             {ticket.status === 'backlog' && (
               <p className="text-gray-500 dark:text-neutral-500 text-sm italic">
@@ -364,30 +554,22 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
             )}
 
             {/* Up Next status - Generate PRD button */}
-            {ticket.status === 'up_next' && (
+            {ticket.status === 'up_next' && !ticket.prdContent && (
               <div>
-                {ticket.prdContent ? (
-                  <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">
-                    <PRDViewer content={ticket.prdContent} />
-                  </div>
-                ) : prdGeneration?.status === 'running' ? (
-                  /* PRD Generation in progress - show live logs */
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span className="text-sm font-medium text-purple-600 dark:text-purple-400">Generating PRD...</span>
-                    </div>
-                    <div className="h-64 border border-gray-300 dark:border-neutral-700 rounded-lg overflow-hidden">
-                      <RalphLogViewer
-                        logs={prdLogs}
-                        status={prdStatus}
-                        isConnected={prdConnected}
-                        error={prdError}
-                      />
-                    </div>
+                {prdGeneration?.status === 'running' ? (
+                  /* PRD Generation in progress */
+                  <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                    <svg className="animate-spin h-4 w-4 text-purple-500" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400">Generating PRD...</span>
+                    <button
+                      onClick={() => setActiveTab('logs')}
+                      className="ml-auto text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                    >
+                      View logs
+                    </button>
                   </div>
                 ) : prdGeneration?.status === 'failed' ? (
                   /* PRD Generation failed */
@@ -433,83 +615,30 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
               </div>
             )}
 
-            {/* In Review status - View/Edit PRD + Approve button */}
+            {/* In Review status - Approve button */}
             {ticket.status === 'in_review' && ticket.prdContent && (
               <div>
-                {isEditingPRD ? (
-                  <PRDEditor
-                    content={ticket.prdContent}
-                    onSave={handleSavePRD}
-                    onCancel={() => setIsEditingPRD(false)}
-                    isSaving={updateTicket.isPending}
-                  />
-                ) : (
-                  <>
-                    <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-64 overflow-y-auto mb-3">
-                      <PRDViewer
-                        content={ticket.prdContent}
-                        onEdit={() => setIsEditingPRD(true)}
-                      />
-                    </div>
-                    <button
-                      onClick={handleApproveAndLaunch}
-                      disabled={approvePRD.isPending}
-                      className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
-                    >
-                      {approvePRD.isPending ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
-                          Approving...
-                        </span>
-                      ) : (
-                        'Approve & Launch RALPH'
-                      )}
-                    </button>
-                    {approvePRD.isError && (
-                      <p className="mt-2 text-red-500 dark:text-red-400 text-sm">
-                        {approvePRD.error?.message || 'Failed to approve PRD'}
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* In Progress - Log viewer + Read-only PRD */}
-            {ticket.status === 'in_progress' && (
-              <div className="space-y-4">
-                {/* RALPH Progress Logs */}
-                {ralphInstance && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-600 dark:text-neutral-400">RALPH Progress</span>
-                      {ticket.branchName && (
-                        <code className="text-xs bg-gray-200 dark:bg-neutral-800 px-2 py-1 rounded text-gray-700 dark:text-neutral-300">
-                          {ticket.branchName}
-                        </code>
-                      )}
-                    </div>
-                    <div className="h-64 border border-gray-300 dark:border-neutral-700 rounded-lg overflow-hidden">
-                      <RalphLogViewer
-                        logs={logs}
-                        status={ralphStatus}
-                        isConnected={isConnected}
-                        error={logsError}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* PRD Content */}
-                {ticket.prdContent ? (
-                  <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-48 overflow-y-auto">
-                    <PRDViewer content={ticket.prdContent} />
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-neutral-500 text-sm italic">No PRD generated.</p>
+                <button
+                  onClick={handleApproveAndLaunch}
+                  disabled={approvePRD.isPending}
+                  className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
+                >
+                  {approvePRD.isPending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Approving...
+                    </span>
+                  ) : (
+                    'Approve & Launch RALPH'
+                  )}
+                </button>
+                {approvePRD.isError && (
+                  <p className="mt-2 text-red-500 dark:text-red-400 text-sm">
+                    {approvePRD.error?.message || 'Failed to approve PRD'}
+                  </p>
                 )}
               </div>
             )}
@@ -679,28 +808,18 @@ export default function TicketDetailPanel({ ticket, project, isOpen, onClose }: 
                 <p className="text-xs text-gray-500 dark:text-neutral-500">
                   Review the branch, merge if satisfied, then mark complete. "Cleanup Worktree" removes the worktree but keeps the branch for merging.
                 </p>
-
-                {/* PRD Content */}
-                {ticket.prdContent && (
-                  <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-48 overflow-y-auto">
-                    <PRDViewer content={ticket.prdContent} />
-                  </div>
-                )}
               </div>
             )}
+          </div>
 
-            {/* Completed - Read-only PRD */}
-            {ticket.status === 'completed' && (
-              <div>
-                {ticket.prdContent ? (
-                  <div className="p-3 bg-gray-100 dark:bg-neutral-800 rounded-lg max-h-64 overflow-y-auto">
-                    <PRDViewer content={ticket.prdContent} />
-                  </div>
-                ) : (
-                  <p className="text-gray-500 dark:text-neutral-500 text-sm italic">No PRD generated.</p>
-                )}
-              </div>
-            )}
+          {/* Delete link */}
+          <div className="mt-8 pt-4 border-t border-gray-200 dark:border-neutral-700">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-sm text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
+            >
+              Delete ticket
+            </button>
           </div>
         </div>
       </div>

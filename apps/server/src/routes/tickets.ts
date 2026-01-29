@@ -183,4 +183,12 @@ app.get('/:id/changes', async (c) => {
   }
 });
 
+// GET /api/tickets/:id/steps - Get steps for a ticket
+app.get('/:id/steps', async (c) => {
+  const ticket = await ticketsService.getTicket(c.req.param('id'));
+  if (!ticket) return c.json({ error: 'Ticket not found' }, 404);
+  const steps = ticket.stepsContent ? JSON.parse(ticket.stepsContent) : [];
+  return c.json({ steps });
+});
+
 export default app;

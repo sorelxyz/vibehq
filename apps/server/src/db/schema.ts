@@ -20,6 +20,7 @@ export const tickets = sqliteTable('tickets', {
     enum: ['backlog', 'up_next', 'in_review', 'in_progress', 'in_testing', 'completed']
   }).notNull().default('backlog'),
   prdContent: text('prd_content'), // Generated PRD markdown
+  stepsContent: text('steps_content'), // JSON stringified Step[] parsed from PRD
   branchName: text('branch_name'), // Git branch for this ticket
   position: integer('position').notNull().default(0), // Order within status column
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),

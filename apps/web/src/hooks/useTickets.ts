@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
-import type { Ticket, CreateTicketInput, UpdateTicketInput, TicketStatus, RalphInstance, FileChange } from '@vibehq/shared';
+import type { Ticket, CreateTicketInput, UpdateTicketInput, TicketStatus, RalphInstance, FileChange, Step } from '@vibehq/shared';
 
 export function useTickets(projectId?: string) {
   return useQuery({
@@ -241,5 +241,14 @@ export function useFileChanges(ticketId: string | undefined) {
     queryFn: () => api.get<{ changes: FileChange[] }>(`/tickets/${ticketId}/changes`),
     enabled: !!ticketId,
     select: (data) => data.changes,
+  });
+}
+
+export function useTicketSteps(ticketId: string | undefined) {
+  return useQuery({
+    queryKey: ['ticket-steps', ticketId],
+    queryFn: () => api.get<{ steps: Step[] }>(`/tickets/${ticketId}/steps`),
+    enabled: !!ticketId,
+    select: (data) => data.steps,
   });
 }

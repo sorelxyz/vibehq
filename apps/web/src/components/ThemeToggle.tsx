@@ -36,24 +36,22 @@ export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="p-2">
-      <div className="flex gap-1 p-1 rounded-lg bg-gray-200 dark:bg-neutral-800">
-        {themes.map(({ value, label, icon }) => (
-          <button
-            key={value}
-            onClick={() => setTheme(value)}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-sm transition-colors ${
-              theme === value
-                ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-neutral-100 shadow-sm'
-                : 'text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100'
-            }`}
-            title={label}
-          >
-            {icon}
-            <span className="sr-only">{label}</span>
-          </button>
-        ))}
-      </div>
+    <div className="flex gap-0.5 p-0.5 rounded-full bg-gray-200 dark:bg-neutral-800">
+      {themes.map(({ value, label, icon }) => (
+        <button
+          key={value}
+          onClick={() => setTheme(value)}
+          className={`flex items-center justify-center px-2 py-1.5 rounded-full text-sm transition-colors ${
+            theme === value
+              ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-neutral-100 shadow-sm'
+              : 'text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100'
+          }`}
+          title={label}
+        >
+          {icon}
+          <span className="sr-only">{label}</span>
+        </button>
+      ))}
     </div>
   );
 }

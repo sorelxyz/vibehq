@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import type { RalphStatus } from '@vibehq/shared';
+import type { RalphStatus, Step } from '@vibehq/shared';
 
 interface UseRalphLogsResult {
   logs: string;
   status: RalphStatus | null;
+  steps: Step[];
   isConnected: boolean;
   error: string | null;
 }
@@ -11,6 +12,7 @@ interface UseRalphLogsResult {
 export function useRalphLogs(instanceId: string | null): UseRalphLogsResult {
   const [logs, setLogs] = useState('');
   const [status, setStatus] = useState<RalphStatus | null>(null);
+  const [steps, setSteps] = useState<Step[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -22,6 +24,7 @@ export function useRalphLogs(instanceId: string | null): UseRalphLogsResult {
     if (!instanceId) {
       setLogs('');
       setStatus(null);
+      setSteps([]);
       setIsConnected(false);
       setError(null);
       return;
@@ -53,6 +56,8 @@ export function useRalphLogs(instanceId: string | null): UseRalphLogsResult {
             }
           } else if (data.type === 'status') {
             setStatus(data.status);
+          } else if (data.type === 'steps') {
+            setSteps(data.steps);
           } else if (data.type === 'error') {
             setError(data.message);
           }
@@ -99,5 +104,5 @@ export function useRalphLogs(instanceId: string | null): UseRalphLogsResult {
     };
   }, [instanceId]);
 
-  return { logs, status, isConnected, error };
+  return { logs, status, steps, isConnected, error };
 }

@@ -5,6 +5,16 @@ export type TicketStatus = typeof TICKET_STATUSES[number];
 export const RALPH_STATUSES = ['pending', 'running', 'completed', 'failed'] as const;
 export type RalphStatus = typeof RALPH_STATUSES[number];
 
+export const STEP_STATUSES = ['pending', 'in_progress', 'completed'] as const;
+export type StepStatus = typeof STEP_STATUSES[number];
+
+export interface Step {
+  id: string;
+  title: string;
+  description: string;
+  status: StepStatus;
+}
+
 // Project colors
 export const PROJECT_COLORS = [
   '#ef4444', // red
@@ -43,6 +53,7 @@ export interface Ticket {
   description: string;
   status: TicketStatus;
   prdContent: string | null;
+  stepsContent: string | null;  // JSON stringified Step[]
   branchName: string | null;
   position: number;
   createdAt: Date;
@@ -110,6 +121,7 @@ export interface UpdateTicketInput {
   description?: string;
   status?: TicketStatus;
   prdContent?: string;
+  stepsContent?: string;
   branchName?: string;
   position?: number;
 }

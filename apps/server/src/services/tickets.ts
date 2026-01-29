@@ -44,6 +44,7 @@ export async function updateTicket(id: string, data: UpdateTicketInput): Promise
   if (data.description !== undefined) updateData.description = data.description;
   if (data.status !== undefined) updateData.status = data.status;
   if (data.prdContent !== undefined) updateData.prdContent = data.prdContent;
+  if (data.stepsContent !== undefined) updateData.stepsContent = data.stepsContent;
   if (data.branchName !== undefined) updateData.branchName = data.branchName;
   if (data.position !== undefined) updateData.position = data.position;
 
@@ -118,6 +119,7 @@ function mapToTicket(row: typeof tickets.$inferSelect): Ticket {
     description: row.description,
     status: row.status as TicketStatus,
     prdContent: row.prdContent,
+    stepsContent: row.stepsContent,
     branchName: row.branchName,
     position: row.position,
     createdAt: row.createdAt,

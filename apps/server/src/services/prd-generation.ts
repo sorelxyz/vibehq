@@ -1,4 +1,4 @@
-import type { Ticket, Project, TicketImage } from '@vibehq/shared';
+import type { Ticket, Project, TicketImage, Step } from '@vibehq/shared';
 import { appendFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import * as ticketsService from './tickets';
@@ -63,6 +63,25 @@ List tasks in recommended implementation order with brief reasoning.
 Any additional context RALPH needs.
 
 Keep the PRD concise but specific enough for autonomous implementation. Focus on WHAT needs to be done, not HOW.`;
+
+/**
+ * Parse steps from PRD content
+ */
+function parseStepsFromPRD(prdContent: string): Step[] {
+  const steps: Step[] = [];
+  // Match ### N. [Task Name] or ### N. Task Name patterns
+  const stepRegex = /###\s+(\d+)\.\s+(?:\[([^\]]+)\]|([^\n]+))\s*([\s\S]*?)(?=###\s+\d+\.|##\s|$)/g;
+  let match;
+  while ((match = stepRegex.exec(prdContent)) !== null) {
+    steps.push({
+      id: match[1],
+      title: (match[2] || match[3]).trim(),
+      description: match[4].trim(),
+      status: 'pending'
+    });
+  }
+  return steps;
+}
 
 function buildPrompt(
   ticket: Ticket,
@@ -195,11 +214,16 @@ async function runGeneration(
       throw new Error(`Claude Code failed (exit ${exitCode}): ${stderr}`);
     }
 
-    // Update ticket with PRD content
+    // Update ticket with PRD content and parsed steps
     await log(`\n[${new Date().toISOString()}] PRD generation complete!`);
 
+    const prdContent = fullOutput.trim();
+    const steps = parseStepsFromPRD(prdContent);
+    await log(`[${new Date().toISOString()}] Parsed ${steps.length} steps from PRD`);
+
     await ticketsService.updateTicket(ticket.id, {
-      prdContent: fullOutput.trim(),
+      prdContent,
+      stepsContent: JSON.stringify(steps),
       status: 'in_review',
     });
 

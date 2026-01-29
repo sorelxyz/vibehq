@@ -1,21 +1,22 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import type { Ticket } from '@vibehq/shared';
 import { useTickets } from '../hooks/useTickets';
 import { useProjects } from '../hooks/useProjects';
 import KanbanBoard from '../components/KanbanBoard';
 import TicketDetailPanel from '../components/TicketDetailPanel';
 import NewTicketModal from '../components/NewTicketModal';
+import ManageProjectsModal from '../components/ManageProjectsModal';
 import { ThemeToggle } from '../components/ThemeToggle';
 
 export default function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
+  const [showManageProjectsModal, setShowManageProjectsModal] = useState(false);
 
   const { data: projects, isLoading: projectsLoading } = useProjects();
-  const { data: tickets, isLoading: ticketsLoading } = useTickets(selectedProjectId);
+  const { data: tickets, isLoading: ticketsLoading } = useTickets();
 
   // Sync URL with selected ticket
   useEffect(() => {
@@ -48,32 +49,20 @@ export default function DashboardPage() {
   const isLoading = projectsLoading || ticketsLoading;
 
   return (
-    <div className="p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-neutral-100">VibeHQ</h2>
-        <div className="flex items-center gap-4">
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-neutral-800">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-neutral-100">VibeHQ</h2>
+        <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Link
-            to="/projects"
-            className="px-3 py-2 text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
+          <button
+            onClick={() => setShowManageProjectsModal(true)}
+            className="px-3 py-1.5 text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-neutral-100 bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-full text-sm transition-colors"
           >
             Manage Projects
-          </Link>
-          <select
-            value={selectedProjectId || ''}
-            onChange={(e) => setSelectedProjectId(e.target.value || undefined)}
-            className="px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-md text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Projects</option>
-            {projects?.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
+          </button>
           <button
             onClick={() => setShowNewTicketModal(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors"
+            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm font-medium transition-colors"
           >
             New Ticket
           </button>
@@ -81,10 +70,10 @@ export default function DashboardPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)]">
+        <div className="flex flex-1 overflow-x-auto">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="w-[280px] min-w-[280px] bg-white dark:bg-neutral-900 rounded-lg animate-pulse">
-              <div className="p-3 border-b border-gray-200 dark:border-neutral-800">
+            <div key={i} className={`flex flex-col w-[280px] min-w-[280px] animate-pulse ${i < 5 ? 'border-r border-gray-200 dark:border-neutral-800' : ''}`}>
+              <div className="p-3">
                 <div className="h-5 bg-gray-200 dark:bg-neutral-800 rounded w-24" />
               </div>
               <div className="p-2 space-y-2">
@@ -114,7 +103,11 @@ export default function DashboardPage() {
         isOpen={showNewTicketModal}
         onClose={() => setShowNewTicketModal(false)}
         projects={projects || []}
-        defaultProjectId={selectedProjectId}
+      />
+
+      <ManageProjectsModal
+        isOpen={showManageProjectsModal}
+        onClose={() => setShowManageProjectsModal(false)}
       />
     </div>
   );

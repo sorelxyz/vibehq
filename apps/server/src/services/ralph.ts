@@ -52,6 +52,11 @@ export async function createRalphInstance(
   const progressPath = `${instanceDir}/progress.txt`;
   await writeFile(progressPath, '');
 
+  // Write steps.json file
+  const stepsFilePath = `${instanceDir}/steps.json`;
+  const steps = ticket.stepsContent ? JSON.parse(ticket.stepsContent) : [];
+  await writeFile(stepsFilePath, JSON.stringify(steps, null, 2));
+
   // Generate RALPH script
   const scriptPath = `${instanceDir}/run-ralph.sh`;
   const logPath = `${instanceDir}/ralph.log`;
@@ -66,16 +71,21 @@ cd "${worktreePath}"
 claude --dangerously-skip-permissions --print "You are RALPH, an autonomous coding agent.
 
 Read the PRD at ${prdFilePath} to understand what needs to be built.
+Read the steps file at ${stepsFilePath} for structured task status.
 Read the progress file at ${progressPath} to see what has already been done.
 
 Your task:
-1. Identify the next incomplete item from the PRD
-2. Implement it fully
-3. Run any type checking or linting commands specified in the PRD
-4. Commit your changes with a descriptive message
-5. Update ${progressPath} with what you completed
+1. Identify the next incomplete item (status: 'pending' in steps.json)
+2. Update steps.json to set that step's status to 'in_progress'
+3. Implement it fully
+4. Run any type checking or linting commands specified in the PRD
+5. Commit your changes with a descriptive message
+6. Update steps.json to set the step's status to 'completed'
+7. Update ${progressPath} with what you completed
 
-If all items in the PRD are complete, output: RALPH_COMPLETE
+When updating steps.json: read it, parse as JSON, update the status field, write back.
+
+If all items in the PRD are complete (all steps have status 'completed'), output: RALPH_COMPLETE
 
 Work autonomously. Make decisions. Ship code." 2>&1
 `;

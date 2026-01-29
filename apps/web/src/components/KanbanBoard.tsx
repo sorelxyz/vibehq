@@ -125,7 +125,7 @@ export default function KanbanBoard({ tickets, projects, onTicketClick }: Kanban
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)]">
+      <div className="flex flex-1 overflow-x-auto">
         {TICKET_STATUSES.map((status, index) => (
           <KanbanColumn
             key={status}

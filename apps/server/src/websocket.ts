@@ -1,6 +1,7 @@
 import { watch } from 'fs';
 import { readFile, stat } from 'fs/promises';
 import type { ServerWebSocket } from 'bun';
+import type { Step } from '@vibehq/shared';
 
 export interface WebSocketData {
   instanceId: string | null;
@@ -11,6 +12,9 @@ const subscriptions = new Map<string, Set<ServerWebSocket<WebSocketData>>>();
 
 // Track file watchers
 const fileWatchers = new Map<string, { watcher: ReturnType<typeof watch>; lastSize: number }>();
+
+// Track steps file watchers
+const stepsWatchers = new Map<string, ReturnType<typeof watch>>();
 
 export const websocketHandler = {
   open(ws: ServerWebSocket<WebSocketData>) {
@@ -45,6 +49,7 @@ async function subscribeToLogs(ws: ServerWebSocket<WebSocketData>, instanceId: s
 
   let logPath: string | null = null;
   let status: string | null = null;
+  let worktreePath: string | null = null;
 
   // Check if this is a PRD generation or RALPH instance
   if (instanceId.startsWith('prd-')) {
@@ -62,6 +67,7 @@ async function subscribeToLogs(ws: ServerWebSocket<WebSocketData>, instanceId: s
     if (instance) {
       logPath = instance.logPath;
       status = instance.status;
+      worktreePath = instance.worktreePath;
     }
   }
 
@@ -90,6 +96,24 @@ async function subscribeToLogs(ws: ServerWebSocket<WebSocketData>, instanceId: s
     startWatching(instanceId, logPath);
   }
 
+  // For RALPH instances, also watch and send steps.json
+  if (worktreePath) {
+    const stepsPath = `${worktreePath}/.ralph-instance/steps.json`;
+    try {
+      const stepsContent = await readFile(stepsPath, 'utf-8');
+      const steps = JSON.parse(stepsContent) as Step[];
+      ws.send(JSON.stringify({ type: 'steps', instanceId, steps, initial: true }));
+
+      // Start watching steps file
+      if (!stepsWatchers.has(instanceId)) {
+        watchStepsFile(instanceId, stepsPath);
+      }
+    } catch {
+      // Steps file might not exist yet
+      ws.send(JSON.stringify({ type: 'steps', instanceId, steps: [], initial: true }));
+    }
+  }
+
   // Send current status
   if (status) {
     ws.send(JSON.stringify({ type: 'status', instanceId, status }));
@@ -106,6 +130,7 @@ function unsubscribeFromLogs(ws: ServerWebSocket<WebSocketData>) {
     if (subs.size === 0) {
       subscriptions.delete(instanceId);
       stopWatching(instanceId);
+      stopWatchingSteps(instanceId);
     }
   }
   ws.data.instanceId = null;
@@ -177,5 +202,50 @@ export function broadcastLog(instanceId: string, data: string) {
     for (const ws of subs) {
       ws.send(message);
     }
+  }
+}
+
+/**
+ * Broadcast steps update to all subscribers
+ */
+export function broadcastSteps(instanceId: string, steps: Step[]) {
+  const subs = subscriptions.get(instanceId);
+  if (subs && subs.size > 0) {
+    const message = JSON.stringify({ type: 'steps', instanceId, steps });
+    for (const ws of subs) {
+      ws.send(message);
+    }
+  }
+}
+
+/**
+ * Watch steps.json file for changes and broadcast updates
+ */
+function watchStepsFile(instanceId: string, stepsPath: string) {
+  if (stepsWatchers.has(instanceId)) return;
+
+  const watcher = watch(stepsPath, async (eventType) => {
+    if (eventType !== 'change') return;
+
+    try {
+      const content = await readFile(stepsPath, 'utf-8');
+      const steps = JSON.parse(content) as Step[];
+      broadcastSteps(instanceId, steps);
+    } catch (error) {
+      console.error('Error watching steps file:', error);
+    }
+  });
+
+  stepsWatchers.set(instanceId, watcher);
+}
+
+/**
+ * Stop watching steps file
+ */
+function stopWatchingSteps(instanceId: string) {
+  const watcher = stepsWatchers.get(instanceId);
+  if (watcher) {
+    watcher.close();
+    stepsWatchers.delete(instanceId);
   }
 }
