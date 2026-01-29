@@ -1,7 +1,9 @@
-const API_BASE = '/api';
+import { config } from './config';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const url = path.startsWith('/') ? `${config.apiBase}${path}` : `${config.apiBase}/${path}`;
+  
+  const response = await fetch(url, {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
@@ -11,7 +13,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (response.status === 401) {
-    // Trigger re-auth by reloading
     window.location.reload();
     throw new Error('Unauthorized');
   }

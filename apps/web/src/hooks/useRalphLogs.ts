@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { RalphStatus, Step } from '@vibehq/shared';
+import { config } from '../lib/config';
 
 interface UseRalphLogsResult {
   logs: string;
@@ -32,8 +33,7 @@ export function useRalphLogs(instanceId: string | null): UseRalphLogsResult {
 
     const connect = () => {
       // Connect to WebSocket
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+      const ws = new WebSocket(config.wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {

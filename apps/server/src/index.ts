@@ -35,7 +35,16 @@ const app = new Hono();
 // Middleware
 app.use('*', errorHandler);
 app.use('/api/*', cors({ 
-  origin: (origin) => origin || '*', // Allow any origin for now
+  origin: (origin) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return '*';
+    // Allow localhost for development
+    if (origin.includes('localhost')) return origin;
+    // Allow Vercel preview and production URLs
+    if (origin.includes('vercel.app')) return origin;
+    // Allow any origin for now (tighten later if needed)
+    return origin;
+  },
   credentials: true,
 }));
 
