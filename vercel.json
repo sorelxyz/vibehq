@@ -1,6 +1,6 @@
 {
-  "buildCommand": "bun install && cd apps/web && bun run build",
+  "installCommand": "curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install",
+  "buildCommand": "~/.bun/bin/bun run --filter @vibehq/web build",
   "outputDirectory": "apps/web/dist",
-  "installCommand": "bun install",
-  "framework": "vite"
+  "framework": null
 }
