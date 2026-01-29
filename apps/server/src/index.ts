@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { migrate } from './db/migrate';
 import projectsRoutes from './routes/projects';
 import ticketsRoutes from './routes/tickets';
 import imagesRoutes from './routes/images';
@@ -10,9 +9,7 @@ import { ensureUploadsDir } from './services/images';
 import { websocketHandler } from './websocket';
 import { startProcessMonitor, stopProcessMonitor, recoverOrphanedInstances } from './services/process-monitor';
 import { errorHandler } from './middleware/error-handler';
-
-// Run migrations on startup
-migrate();
+import { authMiddleware, loginPostHandler } from './middleware/auth';
 
 // Ensure uploads directory exists
 ensureUploadsDir();
@@ -37,14 +34,23 @@ const app = new Hono();
 
 // Middleware
 app.use('*', errorHandler);
-app.use('/api/*', cors({ origin: 'http://localhost:5173' }));
+app.use('/api/*', cors({ 
+  origin: (origin) => origin || '*', // Allow any origin for now
+  credentials: true,
+}));
+
+// Auth middleware for API routes
+app.use('/api/*', authMiddleware);
+
+// Login endpoint (before auth middleware takes effect due to skip in middleware)
+app.post('/api/login', loginPostHandler);
 
 // Routes
 app.route('/api/projects', projectsRoutes);
 app.route('/api/tickets', ticketsRoutes);
 app.route('/api/ralph', ralphRoutes);
 app.route('/api', imagesRoutes);
-app.route('/api', ralphRoutes); // Also mount for /api/tickets/:id/ralph and /api/tickets/:id/launch-ralph
+app.route('/api', ralphRoutes);
 app.route('/', staticRoutes);
 
 // Health check
@@ -52,7 +58,7 @@ app.get('/health', (c) => c.json({ status: 'ok' }));
 
 // Custom fetch handler that upgrades WebSocket connections
 const server = {
-  port: 3001,
+  port: process.env.PORT ? parseInt(process.env.PORT) : 3001,
   fetch(req: Request, server: { upgrade: (req: Request) => boolean }) {
     const url = new URL(req.url);
 
@@ -60,12 +66,11 @@ const server = {
     if (url.pathname === '/ws' && req.headers.get('upgrade') === 'websocket') {
       const success = server.upgrade(req);
       if (success) {
-        return undefined; // Bun handles the response
+        return undefined;
       }
       return new Response('WebSocket upgrade failed', { status: 500 });
     }
 
-    // Pass all other requests to Hono
     return app.fetch(req);
   },
   websocket: websocketHandler,
@@ -73,4 +78,4 @@ const server = {
 
 export default server;
 
-console.log('Server running on http://localhost:3001');
+console.log(`Server running on http://localhost:${server.port}`);
