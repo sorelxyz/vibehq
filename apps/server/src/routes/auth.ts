@@ -79,7 +79,11 @@ app.get('/github/callback', async (c) => {
   const code = c.req.query('code');
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   
+  console.log('[OAuth] Callback received, code:', code ? 'present' : 'missing');
+  console.log('[OAuth] Frontend URL:', frontendUrl);
+  
   if (!code) {
+    console.log('[OAuth] No code, redirecting to error');
     return c.redirect(`${frontendUrl}/login?error=no_code`);
   }
   
@@ -99,8 +103,10 @@ app.get('/github/callback', async (c) => {
     
     const tokenData = await tokenRes.json() as { access_token?: string; error?: string };
     
+    console.log('[OAuth] GitHub token response:', JSON.stringify(tokenData));
+    
     if (!tokenData.access_token) {
-      console.error('GitHub token error:', tokenData);
+      console.error('[OAuth] GitHub token error:', tokenData);
       return c.redirect(`${frontendUrl}/login?error=token_failed`);
     }
     
@@ -114,19 +120,27 @@ app.get('/github/callback', async (c) => {
     const userData = await userRes.json() as { login?: string };
     const username = userData.login?.toLowerCase();
     
+    console.log('[OAuth] GitHub user:', username);
+    console.log('[OAuth] Allowed users:', GITHUB_ALLOWED_USERS);
+    
     if (!username) {
+      console.log('[OAuth] No username, redirecting to error');
       return c.redirect(`${frontendUrl}/login?error=no_user`);
     }
     
     if (GITHUB_ALLOWED_USERS.length > 0 && !GITHUB_ALLOWED_USERS.includes(username)) {
-      console.log(`Denied access for GitHub user: ${username}`);
+      console.log(`[OAuth] Denied access for GitHub user: ${username}`);
       return c.redirect(`${frontendUrl}/login?error=not_allowed`);
     }
     
     // Create JWT token
     const jwt = createJWT({ sub: username, type: 'github' });
+    console.log('[OAuth] Created JWT, length:', jwt.length);
     
-    return c.redirect(`${frontendUrl}/auth/callback?token=${jwt}`);
+    const redirectUrl = `${frontendUrl}/auth/callback?token=${jwt}`;
+    console.log('[OAuth] Redirecting to:', redirectUrl.substring(0, 80) + '...');
+    
+    return c.redirect(redirectUrl);
     
   } catch (error) {
     console.error('GitHub OAuth error:', error);
@@ -137,12 +151,19 @@ app.get('/github/callback', async (c) => {
 // Verify token endpoint
 app.get('/verify', (c) => {
   const auth = c.req.header('Authorization');
+  console.log('[Verify] Auth header present:', !!auth);
+  
   if (!auth?.startsWith('Bearer ')) {
+    console.log('[Verify] No Bearer token');
     return c.json({ valid: false }, 401);
   }
   
   const token = auth.slice(7);
+  console.log('[Verify] Token length:', token.length, 'starts with:', token.substring(0, 20));
+  
   const result = verifyJWT(token);
+  console.log('[Verify] Result:', result.valid, result.payload?.sub);
+  
   return c.json({ valid: result.valid, user: result.payload?.sub });
 });
 
