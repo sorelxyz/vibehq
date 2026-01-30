@@ -5,8 +5,12 @@ import { sql } from 'drizzle-orm';
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(), // nanoid
   name: text('name').notNull(),
-  path: text('path').notNull(), // Local filesystem path to codebase
+  path: text('path').notNull(), // Local filesystem path to codebase (repo name)
   color: text('color').notNull().default('#3b82f6'), // Project color (default blue)
+  deploymentPlatform: text('deployment_platform', {
+    enum: ['vercel', 'cloudflare', 'other']
+  }), // Preview deployment platform
+  deploymentProjectName: text('deployment_project_name'), // Project name on Vercel/Cloudflare
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 });
 

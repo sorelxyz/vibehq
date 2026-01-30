@@ -84,6 +84,7 @@ export default function KanbanColumn({ status, tickets, projects, onTicketClick,
                 <SortableTicketCard
                   key={ticket.id}
                   ticket={ticket}
+                  project={project}
                   onClick={() => onTicketClick(ticket)}
                   projectName={project?.name}
                   projectColor={project?.color}

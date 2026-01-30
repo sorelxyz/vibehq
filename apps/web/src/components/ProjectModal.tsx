@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
-import type { Project } from '@vibehq/shared';
-import { PROJECT_COLORS } from '@vibehq/shared';
+import type { Project, DeploymentPlatform } from '@vibehq/shared';
+import { PROJECT_COLORS, DEPLOYMENT_PLATFORMS } from '@vibehq/shared';
 
 interface ProjectModalProps {
   project?: Project;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { name: string; path: string; color: string }) => void;
+  onSave: (data: { 
+    name: string; 
+    path: string; 
+    color: string;
+    deploymentPlatform: DeploymentPlatform | null;
+    deploymentProjectName: string | null;
+  }) => void;
   isLoading?: boolean;
 }
 
@@ -14,6 +20,8 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
   const [name, setName] = useState('');
   const [path, setPath] = useState('');
   const [color, setColor] = useState<string>(PROJECT_COLORS[9]); // Default blue
+  const [deploymentPlatform, setDeploymentPlatform] = useState<DeploymentPlatform | ''>('');
+  const [deploymentProjectName, setDeploymentProjectName] = useState('');
   const [error, setError] = useState('');
   const [isBrowsing, setIsBrowsing] = useState(false);
 
@@ -36,7 +44,6 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
       }
 
       if (data.cancelled) {
-        // User cancelled, do nothing
         return;
       }
 
@@ -55,10 +62,14 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
       setName(project.name);
       setPath(project.path);
       setColor(project.color || PROJECT_COLORS[9]);
+      setDeploymentPlatform(project.deploymentPlatform || '');
+      setDeploymentProjectName(project.deploymentProjectName || '');
     } else {
       setName('');
       setPath('');
       setColor(PROJECT_COLORS[9]);
+      setDeploymentPlatform('');
+      setDeploymentProjectName('');
     }
     setError('');
   }, [project, isOpen]);
@@ -71,13 +82,19 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
       setError('Name and path are required');
       return;
     }
-    onSave({ name: name.trim(), path: path.trim(), color });
+    onSave({ 
+      name: name.trim(), 
+      path: path.trim(), 
+      color,
+      deploymentPlatform: deploymentPlatform || null,
+      deploymentProjectName: deploymentProjectName.trim() || null,
+    });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md mx-4 border border-gray-200 dark:border-neutral-800">
+      <div className="relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md mx-4 border border-gray-200 dark:border-neutral-800 max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-neutral-100">
             {project ? 'Edit Project' : 'New Project'}
@@ -99,7 +116,7 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
             </div>
             <div>
               <label htmlFor="path" className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1">
-                Path
+                Path (repo name)
               </label>
               <div className="flex">
                 <input
@@ -108,7 +125,7 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
                   value={path}
                   onChange={(e) => setPath(e.target.value)}
                   className="flex-1 px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-l-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="/path/to/your/project"
+                  placeholder="my-repo"
                 />
                 <button
                   type="button"
@@ -150,6 +167,53 @@ export default function ProjectModal({ project, isOpen, onClose, onSave, isLoadi
                 ))}
               </div>
             </div>
+
+            {/* Deployment Settings */}
+            <div className="border-t border-gray-200 dark:border-neutral-700 pt-4 mt-4">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-neutral-300 mb-3">
+                Preview Deployment
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="deploymentPlatform" className="block text-sm text-gray-600 dark:text-neutral-400 mb-1">
+                    Platform
+                  </label>
+                  <select
+                    id="deploymentPlatform"
+                    value={deploymentPlatform}
+                    onChange={(e) => setDeploymentPlatform(e.target.value as DeploymentPlatform | '')}
+                    className="w-full px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">None</option>
+                    <option value="vercel">Vercel</option>
+                    <option value="cloudflare">Cloudflare Pages</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                {deploymentPlatform && deploymentPlatform !== 'other' && (
+                  <div>
+                    <label htmlFor="deploymentProjectName" className="block text-sm text-gray-600 dark:text-neutral-400 mb-1">
+                      Project Name on {deploymentPlatform === 'vercel' ? 'Vercel' : 'Cloudflare'}
+                    </label>
+                    <input
+                      id="deploymentProjectName"
+                      type="text"
+                      value={deploymentProjectName}
+                      onChange={(e) => setDeploymentProjectName(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-100 dark:bg-neutral-800 border border-gray-300 dark:border-neutral-700 rounded-lg text-gray-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={deploymentPlatform === 'vercel' ? 'my-project' : 'my-project'}
+                    />
+                    <p className="text-xs text-gray-500 dark:text-neutral-500 mt-1">
+                      {deploymentPlatform === 'vercel' 
+                        ? 'Preview URL: {project}-git-{branch}.vercel.app'
+                        : 'Preview URL: {branch}.{project}.pages.dev'
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {error && (
               <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>
             )}

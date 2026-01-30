@@ -1,7 +1,7 @@
 import { db, projects } from '../db';
 import { eq, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import type { Project, CreateProjectInput, UpdateProjectInput } from '@vibehq/shared';
+import type { Project, CreateProjectInput, UpdateProjectInput, DeploymentPlatform } from '@vibehq/shared';
 
 export async function listProjects(): Promise<Project[]> {
   const rows = await db.select().from(projects).orderBy(desc(projects.createdAt));
@@ -19,6 +19,8 @@ export async function createProject(data: CreateProjectInput): Promise<Project> 
     name: data.name,
     path: data.path,
     ...(data.color && { color: data.color }),
+    ...(data.deploymentPlatform !== undefined && { deploymentPlatform: data.deploymentPlatform }),
+    ...(data.deploymentProjectName !== undefined && { deploymentProjectName: data.deploymentProjectName }),
   }).returning();
   return mapToProject(row);
 }
@@ -29,6 +31,8 @@ export async function updateProject(id: string, data: UpdateProjectInput): Promi
       ...(data.name !== undefined && { name: data.name }),
       ...(data.path !== undefined && { path: data.path }),
       ...(data.color !== undefined && { color: data.color }),
+      ...(data.deploymentPlatform !== undefined && { deploymentPlatform: data.deploymentPlatform }),
+      ...(data.deploymentProjectName !== undefined && { deploymentProjectName: data.deploymentProjectName }),
     })
     .where(eq(projects.id, id))
     .returning();
@@ -49,6 +53,8 @@ function mapToProject(row: typeof projects.$inferSelect): Project {
     name: row.name,
     path: row.path,
     color: row.color,
+    deploymentPlatform: row.deploymentPlatform as DeploymentPlatform | null,
+    deploymentProjectName: row.deploymentProjectName,
     createdAt: row.createdAt,
   };
 }

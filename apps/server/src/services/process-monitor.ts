@@ -1,9 +1,11 @@
-import { db, ralphInstances } from '../db';
+import { db, ralphInstances, tickets, projects } from '../db';
 import { eq } from 'drizzle-orm';
 import { readFile } from 'fs/promises';
 import { broadcastStatus } from '../websocket';
 import * as ticketsService from './tickets';
 import { isProcessRunning, removeProcess } from './ralph';
+import { resolveRepoPath } from '../utils/paths';
+import { exec } from '../utils/shell';
 
 let monitorInterval: Timer | null = null;
 const POLL_INTERVAL = 5000; // 5 seconds
@@ -43,6 +45,11 @@ async function checkRunningInstances(): Promise<void> {
 
       // Remove from in-memory process tracking
       removeProcess(instance.id);
+
+      // If completed successfully, push branch to remote for preview deployment
+      if (status === 'completed') {
+        await pushBranchToRemote(instance.ticketId);
+      }
 
       // Update ticket status based on RALPH outcome
       const newTicketStatus = status === 'completed' ? 'in_testing' : 'in_review';
@@ -108,5 +115,45 @@ export async function recoverOrphanedInstances(): Promise<void> {
 
       console.log(`Recovered orphaned RALPH ${instance.id}: ${status}. Ticket → ${newTicketStatus}`);
     }
+  }
+}
+
+/**
+ * Push the branch to remote for preview deployments
+ */
+async function pushBranchToRemote(ticketId: string): Promise<void> {
+  try {
+    // Get ticket and its branch name
+    const [ticket] = await db.select().from(tickets).where(eq(tickets.id, ticketId));
+    if (!ticket?.branchName) {
+      console.log(`No branch name for ticket ${ticketId}, skipping push`);
+      return;
+    }
+
+    // Get project to resolve repo path
+    const [project] = await db.select().from(projects).where(eq(projects.id, ticket.projectId));
+    if (!project) {
+      console.log(`No project for ticket ${ticketId}, skipping push`);
+      return;
+    }
+
+    const repoPath = resolveRepoPath(project.path);
+    const worktreePath = `${repoPath}/.ralph-worktrees/${ticketId}`;
+
+    console.log(`Pushing branch ${ticket.branchName} to remote...`);
+
+    // Push the branch to origin
+    const { exitCode, stderr } = await exec(
+      `git push -u origin "${ticket.branchName}"`,
+      { cwd: worktreePath }
+    );
+
+    if (exitCode === 0) {
+      console.log(`Successfully pushed ${ticket.branchName}`);
+    } else {
+      console.error(`Failed to push branch: ${stderr}`);
+    }
+  } catch (error) {
+    console.error(`Error pushing branch for ticket ${ticketId}:`, error);
   }
 }

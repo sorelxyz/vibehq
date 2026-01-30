@@ -37,12 +37,18 @@ export const PROJECT_COLORS = [
 
 export type ProjectColor = typeof PROJECT_COLORS[number];
 
+// Deployment platforms
+export const DEPLOYMENT_PLATFORMS = ['vercel', 'cloudflare', 'other'] as const;
+export type DeploymentPlatform = typeof DEPLOYMENT_PLATFORMS[number];
+
 // Entity types
 export interface Project {
   id: string;
   name: string;
   path: string;
   color: string;
+  deploymentPlatform: DeploymentPlatform | null;
+  deploymentProjectName: string | null;
   createdAt: Date;
 }
 
@@ -102,12 +108,16 @@ export interface CreateProjectInput {
   name: string;
   path: string;
   color?: string;
+  deploymentPlatform?: DeploymentPlatform | null;
+  deploymentProjectName?: string | null;
 }
 
 export interface UpdateProjectInput {
   name?: string;
   path?: string;
   color?: string;
+  deploymentPlatform?: DeploymentPlatform | null;
+  deploymentProjectName?: string | null;
 }
 
 export interface CreateTicketInput {
@@ -128,4 +138,28 @@ export interface UpdateTicketInput {
 
 export interface ReorderTicketsInput {
   updates: Array<{ id: string; status: TicketStatus; position: number }>;
+}
+
+// Preview URL helpers
+export function getPreviewUrl(
+  platform: DeploymentPlatform | null,
+  projectName: string | null,
+  branchName: string | null
+): string | null {
+  if (!platform || !projectName || !branchName) return null;
+
+  // Convert branch name to URL-safe slug
+  // ralph/abc123-add-dark-mode -> ralph-abc123-add-dark-mode
+  const slug = branchName.replace(/\//g, '-').toLowerCase();
+
+  switch (platform) {
+    case 'vercel':
+      // Vercel format: {project}-git-{branch}.vercel.app
+      return `https://${projectName}-git-${slug}.vercel.app`;
+    case 'cloudflare':
+      // Cloudflare format: {branch}.{project}.pages.dev
+      return `https://${slug}.${projectName}.pages.dev`;
+    default:
+      return null;
+  }
 }

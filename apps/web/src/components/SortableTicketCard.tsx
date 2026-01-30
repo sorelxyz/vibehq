@@ -1,16 +1,17 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Ticket } from '@vibehq/shared';
+import type { Ticket, Project } from '@vibehq/shared';
 import TicketCard from './TicketCard';
 
 interface SortableTicketCardProps {
   ticket: Ticket;
+  project?: Project;
   onClick: () => void;
   projectName?: string;
   projectColor?: string;
 }
 
-export default function SortableTicketCard({ ticket, onClick, projectName, projectColor }: SortableTicketCardProps) {
+export default function SortableTicketCard({ ticket, project, onClick, projectName, projectColor }: SortableTicketCardProps) {
   const {
     attributes,
     listeners,
@@ -29,6 +30,7 @@ export default function SortableTicketCard({ ticket, onClick, projectName, proje
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <TicketCard
         ticket={ticket}
+        project={project}
         onClick={onClick}
         isDragging={isDragging}
         projectName={projectName}

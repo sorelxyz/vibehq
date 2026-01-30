@@ -11,6 +11,8 @@ const migrations = [
     name TEXT NOT NULL,
     path TEXT NOT NULL,
     color TEXT NOT NULL DEFAULT '#3b82f6',
+    deployment_platform TEXT,
+    deployment_project_name TEXT,
     created_at INTEGER NOT NULL DEFAULT (unixepoch())
   )`,
 
@@ -54,6 +56,13 @@ const migrations = [
   )`,
 ];
 
+// Migrations for existing tables (ALTER TABLE)
+const alterMigrations = [
+  // Add deployment fields to projects (ignore if already exists)
+  `ALTER TABLE projects ADD COLUMN deployment_platform TEXT`,
+  `ALTER TABLE projects ADD COLUMN deployment_project_name TEXT`,
+];
+
 async function migrate() {
   if (TURSO_DATABASE_URL && TURSO_AUTH_TOKEN) {
     console.log('🔗 Running migrations on Turso...');
@@ -66,6 +75,15 @@ async function migrate() {
       await client.execute(sql);
     }
 
+    // Run ALTER migrations (ignore errors if columns already exist)
+    for (const sql of alterMigrations) {
+      try {
+        await client.execute(sql);
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+    }
+
     console.log('✅ Turso migrations completed');
   } else {
     console.log('📁 Running migrations on local SQLite...');
@@ -76,6 +94,15 @@ async function migrate() {
 
     for (const sql of migrations) {
       sqlite.run(sql);
+    }
+
+    // Run ALTER migrations (ignore errors if columns already exist)
+    for (const sql of alterMigrations) {
+      try {
+        sqlite.run(sql);
+      } catch (e) {
+        // Column might already exist, ignore
+      }
     }
 
     sqlite.close();
