@@ -3,6 +3,7 @@ import { appendFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import * as ticketsService from './tickets';
 import { broadcastLog, broadcastStatus } from '../websocket';
+import { resolveRepoPath } from '../utils/paths';
 
 export type PrdGenerationStatus = 'running' | 'completed' | 'failed';
 
@@ -88,9 +89,10 @@ function buildPrompt(
   project: Project,
   images: TicketImage[]
 ): string {
+  const repoPath = resolveRepoPath(project.path);
   let prompt = PRD_PROMPT_TEMPLATE
     .replace('{{projectName}}', project.name)
-    .replace('{{projectPath}}', project.path)
+    .replace('{{projectPath}}', repoPath)
     .replace(/\{\{ticketTitle\}\}/g, ticket.title)
     .replace('{{ticketDescription}}', ticket.description);
 
@@ -178,8 +180,9 @@ async function runGeneration(
     await log(`[${new Date().toISOString()}] This may take a few minutes...\n`);
 
     // Spawn Claude process with streaming output
+    const repoPath = resolveRepoPath(project.path);
     const proc = Bun.spawn(['claude', '--print', prompt], {
-      cwd: project.path,
+      cwd: repoPath,
       stdout: 'pipe',
       stderr: 'pipe',
     });

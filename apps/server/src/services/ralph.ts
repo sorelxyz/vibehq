@@ -5,6 +5,7 @@ import { mkdir, writeFile, appendFile } from 'fs/promises';
 import { exec } from '../utils/shell';
 import * as worktreeService from './worktree';
 import { broadcastLog } from '../websocket';
+import { resolveRepoPath } from '../utils/paths';
 import type { RalphInstance, Ticket, Project, RalphStatus } from '@vibehq/shared';
 import type { Subprocess } from 'bun';
 
@@ -25,9 +26,10 @@ export async function createRalphInstance(
 ): Promise<CreateRalphResult> {
   const id = nanoid();
 
-  // Create worktree
+  // Create worktree (resolve path using REPOS_BASE env var)
+  const repoPath = resolveRepoPath(project.path);
   const { worktreePath, branchName } = await worktreeService.createWorktree(
-    project.path,
+    repoPath,
     ticket.id,
     ticket.title
   );

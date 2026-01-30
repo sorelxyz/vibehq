@@ -2,22 +2,25 @@ import { Hono } from 'hono';
 import { stat } from 'fs/promises';
 import * as projectsService from '../services/projects';
 import { isGitRepo } from '../services/worktree';
+import { resolveRepoPath } from '../utils/paths';
 
 const app = new Hono();
 
 async function validateProjectPath(path: string): Promise<{ valid: boolean; error?: string }> {
+  // Resolve relative path to absolute using REPOS_BASE
+  const resolvedPath = resolveRepoPath(path);
   try {
-    const stats = await stat(path);
+    const stats = await stat(resolvedPath);
     if (!stats.isDirectory()) {
       return { valid: false, error: 'Path is not a directory' };
     }
-    const isRepo = await isGitRepo(path);
+    const isRepo = await isGitRepo(resolvedPath);
     if (!isRepo) {
       return { valid: false, error: 'Path is not a git repository' };
     }
     return { valid: true };
   } catch {
-    return { valid: false, error: 'Path does not exist' };
+    return { valid: false, error: `Path does not exist: ${resolvedPath}` };
   }
 }
 
